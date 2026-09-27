@@ -7,7 +7,7 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Mux Player -->
-    <script src="https://cdn.jsdelivr.net/npm/@mux/mux-player"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mux/mux-player"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

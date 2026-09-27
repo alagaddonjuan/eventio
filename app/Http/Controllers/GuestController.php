@@ -134,6 +134,9 @@ class GuestController extends Controller
             'check_in_status' => 'arrived'
         ]);
 
+        // Send email to host
+        \Illuminate\Support\Facades\Mail::to($guest->event->user->email)->send(new \App\Mail\HostGuestArrivedNotificationEmail($guest));
+
         return response()->json([
             'status' => 'success',
             'message' => 'Check-in successful.'
