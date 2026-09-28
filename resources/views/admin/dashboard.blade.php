@@ -156,7 +156,8 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-slate-300">{{ $event->host->name ?? 'Unknown Host' }}</div>
+                                            <div class="font-medium text-white">{{ $event->host->name ?? 'Unknown Host' }}</div>
+                                            <div class="text-slate-400 mt-0.5 text-xs">{{ $event->host->email ?? '' }}</div>
                                         </td>
                                         <td class="px-6 py-4 text-right whitespace-nowrap text-slate-500">
                                             {{ $event->created_at->diffForHumans() }}
