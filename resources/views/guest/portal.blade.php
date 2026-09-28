@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ $guest->event->title ?? 'Event' }} - RSVP</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Access your live event portal for {{ $guest->event->title ?? 'the event' }}. View details, track your arrival, and share photos.">
+    <meta name="keywords" content="event portal, live event, {{ $guest->event->title ?? 'event' }}, eventio">
+    <meta property="og:title" content="{{ $guest->event->title ?? 'Event' }} - Live Portal">
+    <meta property="og:description" content="Access your live event portal for {{ $guest->event->title ?? 'the event' }}. View details, track your arrival, and share photos.">
+    <meta property="og:type" content="website">
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Mux Player -->

@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'Laravel') }} - Live Guest Tracking</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Manage and track your events like a pro. Set up events, invite guests, and track RSVPs in real-time.">
+    <meta name="keywords" content="events, event management, rsvp, real-time tracking, host">
+    <meta property="og:title" content="{{ config('app.name', 'Laravel') }} - Live Guest Tracking">
+    <meta property="og:description" content="Manage and track your events like a pro. Set up events, invite guests, and track RSVPs in real-time.">
+    <meta property="og:type" content="website">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
