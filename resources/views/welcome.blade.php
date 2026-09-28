@@ -71,7 +71,7 @@
                 <h3 class="text-2xl font-bold text-slate-900 mb-6 mt-2">Create New Event</h3>
                 
                 @auth
-                <form action="{{ route('events.store') }}" method="POST" class="space-y-5">
+                <form action="{{ route('events.store') }}" method="POST" class="space-y-5" enctype="multipart/form-data">
                     @csrf
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Event Title</label>
@@ -103,6 +103,11 @@
                                 <span class="text-sm text-slate-500">Pick your brand color</span>
                             </div>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Event Banner Image (Optional)</label>
+                        <input type="file" name="banner_image" accept="image/*" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition">
+                        <p class="text-xs text-slate-500 mt-1">Recommended size: 1200x400px (Max 5MB). Used on RSVP page.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Manual Directions (Optional)</label>

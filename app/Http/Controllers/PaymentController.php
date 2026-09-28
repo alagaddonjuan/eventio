@@ -38,6 +38,7 @@ class PaymentController extends Controller
             'cvv' => 'required',
             'expiry_month' => 'required|size:2',
             'expiry_year' => 'required|size:2',
+            'promo_code' => 'nullable|string'
         ]);
 
         $pendingRsvp = session('pending_rsvp_data');
@@ -46,8 +47,35 @@ class PaymentController extends Controller
         }
 
         $ticket = Ticket::findOrFail($pendingRsvp['ticket_id']);
-        $amount = $ticket->price;
-        $email = $pendingRsvp['email'];
+        $qty = $pendingRsvp['quantity'] ?? 1;
+        $amount = $ticket->price * $qty;
+        $email = $pendingRsvp['emails'][0];
+        
+        $promoCodeObj = null;
+
+        if ($request->filled('promo_code')) {
+            $code = strtoupper(trim($request->promo_code));
+            $promoCodeObj = \App\Models\PromoCode::where('event_id', $ticket->event_id)
+                ->where('code', $code)
+                ->first();
+
+            if (!$promoCodeObj || !$promoCodeObj->isValid()) {
+                return back()->withErrors(['promo_code' => 'Invalid or expired promo code.'])->withInput();
+            }
+
+            if ($promoCodeObj->discount_type === 'percentage') {
+                $amount = $amount - ($amount * ($promoCodeObj->discount_amount / 100));
+            } else {
+                $amount = $amount - $promoCodeObj->discount_amount;
+            }
+
+            if ($amount < 0) $amount = 0;
+            
+            // If the ticket becomes free, bypass payment gateway entirely
+            if ($amount == 0) {
+                return $this->bypassPaymentAndComplete($promoCodeObj);
+            }
+        }
 
         $baseUrl = env('GATEWAY_BASE_URL');
         $clientId = env('GATEWAY_CLIENT_ID');
@@ -79,9 +107,63 @@ class PaymentController extends Controller
 
         // Save the paymentId to the session temporarily
         session(['pending_payment_id' => $paymentId]);
+        if ($promoCodeObj) {
+            session(['pending_promo_code_id' => $promoCodeObj->id]);
+        }
 
         // Redirect the user to a page to enter their OTP
         return redirect()->route('guest.payment.otp')->with('success', 'Please enter the OTP sent to your phone or email by your bank.');
+    }
+
+    private function bypassPaymentAndComplete($promoCodeObj)
+    {
+        $pendingRsvp = session('pending_rsvp_data');
+        $eventToken = session('pending_event_token');
+        $event = Event::where('tracking_access_token', $eventToken)->firstOrFail();
+        $ticket = Ticket::findOrFail($pendingRsvp['ticket_id']);
+        $qty = $pendingRsvp['quantity'] ?? 1;
+        
+        $primaryGuestToken = null;
+        
+        for ($i = 0; $i < $qty; $i++) {
+            $uniqueToken = Str::random(40);
+            if ($i === 0) $primaryGuestToken = $uniqueToken;
+            $barcodeData = $uniqueToken;
+
+            $guest = $event->guests()->create([
+                'name' => $pendingRsvp['names'][$i],
+                'email' => $pendingRsvp['emails'][$i],
+                'rsvp_status' => $pendingRsvp['rsvp_status'],
+                'unique_token' => $uniqueToken,
+                'check_in_status' => 'pending',
+                'ticket_id' => $pendingRsvp['ticket_id'],
+                'barcode_data' => $barcodeData,
+            ]);
+            
+            \App\Models\Payment::create([
+                'event_id' => $event->id,
+                'guest_id' => $guest->id,
+                'ticket_id' => $ticket->id,
+                'reference' => 'PAY-FREE-'.strtoupper(Str::random(8)),
+                'amount' => 0,
+                'platform_fee' => 0,
+                'host_payout' => 0,
+                'status' => 'successful',
+            ]);
+            
+            Mail::to($guest->email)->send(new GuestRsvpConfirmationEmail($guest));
+        }
+        
+        $promoCodeObj->increment('times_used');
+        
+        $totalGuests = $event->guests()->count();
+        if ($totalGuests > 0 && $totalGuests % 10 === 0) {
+            Mail::to($event->user->email)->send(new \App\Mail\HostBatchRsvpNotificationEmail($event, $totalGuests));
+        }
+
+        session()->forget(['pending_rsvp_data', 'pending_event_token']);
+
+        return redirect()->route('guest.portal', $primaryGuestToken)->with('success', 'Promo code applied successfully! Your RSVP is confirmed.');
     }
 
     /**
@@ -120,27 +202,68 @@ class PaymentController extends Controller
         // Check if authorization was successful (adjust condition based on actual RexPay response)
         if (isset($authResponse['status']) && $authResponse['status'] === 'success') {
             
-            session()->forget('pending_payment_id');
-            
-            // COMPLETE THE RSVP
             $pendingRsvp = session('pending_rsvp_data');
             $eventToken = session('pending_event_token');
             $event = Event::where('tracking_access_token', $eventToken)->firstOrFail();
+            $ticket = Ticket::findOrFail($pendingRsvp['ticket_id']);
+            $qty = $pendingRsvp['quantity'] ?? 1;
             
-            $uniqueToken = Str::random(40);
-            $barcodeData = $uniqueToken;
-
-            $guest = $event->guests()->create([
-                'name' => $pendingRsvp['name'],
-                'email' => $pendingRsvp['email'],
-                'rsvp_status' => $pendingRsvp['rsvp_status'],
-                'unique_token' => $uniqueToken,
-                'check_in_status' => 'pending',
-                'ticket_id' => $pendingRsvp['ticket_id'],
-                'barcode_data' => $barcodeData,
-            ]);
+            // Calculate Amount, Fee, Payout
+            // We calculate total amount and then divide by qty for individual payment records
+            $totalAmount = $ticket->price * $qty;
+            $promo = null;
+            if (session()->has('pending_promo_code_id')) {
+                $promo = \App\Models\PromoCode::find(session('pending_promo_code_id'));
+                if ($promo && $promo->discount_type === 'percentage') {
+                    $totalAmount = $totalAmount - ($totalAmount * ($promo->discount_amount / 100));
+                } else if ($promo) {
+                    $totalAmount = $totalAmount - $promo->discount_amount;
+                }
+                if ($totalAmount < 0) $totalAmount = 0;
+            }
             
-            Mail::to($guest->email)->send(new GuestRsvpConfirmationEmail($guest));
+            $amountPerGuest = $totalAmount / $qty;
+            
+            // 5% Platform Fee Config
+            $platformFeePercent = floatval(env('PLATFORM_FEE_PERCENT', 5));
+            $platformFeePerGuest = $amountPerGuest * ($platformFeePercent / 100);
+            $hostPayoutPerGuest = $amountPerGuest - $platformFeePerGuest;
+            
+            $primaryGuestToken = null;
+            
+            for ($i = 0; $i < $qty; $i++) {
+                $uniqueToken = Str::random(40);
+                if ($i === 0) $primaryGuestToken = $uniqueToken;
+                $barcodeData = $uniqueToken;
+    
+                $guest = $event->guests()->create([
+                    'name' => $pendingRsvp['names'][$i],
+                    'email' => $pendingRsvp['emails'][$i],
+                    'rsvp_status' => $pendingRsvp['rsvp_status'],
+                    'unique_token' => $uniqueToken,
+                    'check_in_status' => 'pending',
+                    'ticket_id' => $pendingRsvp['ticket_id'],
+                    'barcode_data' => $barcodeData,
+                ]);
+                
+                // Create Payment Record
+                \App\Models\Payment::create([
+                    'event_id' => $event->id,
+                    'guest_id' => $guest->id,
+                    'ticket_id' => $ticket->id,
+                    'reference' => 'PAY-'.strtoupper(Str::random(12)),
+                    'amount' => $amountPerGuest,
+                    'platform_fee' => $platformFeePerGuest,
+                    'host_payout' => $hostPayoutPerGuest,
+                    'status' => 'successful',
+                ]);
+                
+                Mail::to($guest->email)->send(new GuestRsvpConfirmationEmail($guest));
+            }
+            
+            if ($promo) {
+                $promo->increment('times_used');
+            }
             
             // Notify host for every 10th guest
             $totalGuests = $event->guests()->count();
@@ -148,9 +271,9 @@ class PaymentController extends Controller
                 Mail::to($event->user->email)->send(new \App\Mail\HostBatchRsvpNotificationEmail($event, $totalGuests));
             }
 
-            session()->forget(['pending_rsvp_data', 'pending_event_token']);
+            session()->forget(['pending_payment_id', 'pending_rsvp_data', 'pending_event_token', 'pending_promo_code_id']);
 
-            return redirect()->route('guest.portal', $guest->unique_token)->with('success', 'Payment successful! Your RSVP is confirmed.');
+            return redirect()->route('guest.portal', $primaryGuestToken)->with('success', 'Payment successful! Your RSVP is confirmed.');
         }
 
         return back()->withErrors(['otp' => 'Invalid OTP or authorization failed. Please try again.']);
@@ -164,14 +287,53 @@ class PaymentController extends Controller
     
     private function encryptCardData($data)
     {
-        // Placeholder for RexPay / Global Accelerex encryption
-        return base64_encode(json_encode($data)); 
+        $plaintext = json_encode($data);
+        $publicKeyPath = env('REXPAY_PUBLIC_KEY_PATH');
+        
+        // Ensure you have uploaded the .asc public key file from RexPay to the path specified in .env
+        if ($publicKeyPath && file_exists(storage_path($publicKeyPath))) {
+            try {
+                $keyData = file_get_contents(storage_path($publicKeyPath));
+                $keyMsg = \OpenPGP_Message::parse(\OpenPGP::unarmor($keyData, 'PGP PUBLIC KEY BLOCK'));
+                $dataPacket = new \OpenPGP_LiteralDataPacket($plaintext, array('format' => 'u', 'filename' => 'payload.txt'));
+                $encrypted = \OpenPGP_Crypt_Symmetric::encrypt($keyMsg, new \OpenPGP_Message(array($dataPacket)));
+                
+                return \OpenPGP::enarmor($encrypted->to_bytes(), 'PGP MESSAGE');
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('PGP Encryption Failed: ' . $e->getMessage());
+            }
+        }
+        
+        // Fallback or local dev
+        return base64_encode($plaintext);
     }
 
     private function decryptGatewayResponse($encryptedData)
     {
-        // Placeholder for RexPay / Global Accelerex decryption
         if (empty($encryptedData)) return [];
+        
+        $privateKeyPath = env('EVENTIO_PRIVATE_KEY_PATH');
+        
+        if ($privateKeyPath && file_exists(storage_path($privateKeyPath))) {
+            try {
+                $keyData = file_get_contents(storage_path($privateKeyPath));
+                $keyMsg = \OpenPGP_Message::parse(\OpenPGP::unarmor($keyData, 'PGP PRIVATE KEY BLOCK'));
+                
+                $decryptor = new \OpenPGP_Crypt_RSA($keyMsg);
+                $msg = \OpenPGP_Message::parse(\OpenPGP::unarmor($encryptedData, 'PGP MESSAGE'));
+                $decrypted = $decryptor->decrypt($msg);
+                
+                foreach ($decrypted as $packet) {
+                    if ($packet instanceof \OpenPGP_LiteralDataPacket) {
+                        return json_decode($packet->data, true) ?? [];
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('PGP Decryption Failed: ' . $e->getMessage());
+            }
+        }
+        
+        // Fallback or local dev
         return json_decode(base64_decode($encryptedData), true) ?? []; 
     }
 }

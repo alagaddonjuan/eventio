@@ -32,4 +32,9 @@ class Guest extends Model
     {
         return $this->belongsTo(Ticket::class);
     }
+
+    public function supportTickets()
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
 }

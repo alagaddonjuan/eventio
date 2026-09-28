@@ -48,6 +48,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/tickets', [\App\Http\Controllers\TicketController::class, 'store'])->name('tickets.store');
     Route::delete('/events/{event}/tickets/{ticket}', [\App\Http\Controllers\TicketController::class, 'destroy'])->name('tickets.destroy');
 
+    // Promo Code Routes
+    Route::post('/events/{event}/promo-codes', [\App\Http\Controllers\PromoCodeController::class, 'store'])->name('promo-codes.store');
+    Route::delete('/events/{event}/promo-codes/{promoCode}', [\App\Http\Controllers\PromoCodeController::class, 'destroy'])->name('promo-codes.destroy');
+
+    // Support Ticket Routes (Host)
+    Route::get('/events/{event}/support', [\App\Http\Controllers\SupportController::class, 'hostIndex'])->name('support.index');
+    Route::post('/events/support/{ticketId}/reply', [\App\Http\Controllers\SupportController::class, 'storeMessage'])->name('support.reply');
+    Route::post('/events/support/{ticketId}/close', [\App\Http\Controllers\SupportController::class, 'closeTicket'])->name('support.close');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -57,12 +66,25 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
     Route::post('/toggle-premium', [\App\Http\Controllers\AdminController::class, 'togglePremium'])->name('toggle-premium');
+    
+    // User management
+    Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
+    Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'destroyUser'])->name('users.destroy');
+    
+    // Event management
+    Route::get('/events', [\App\Http\Controllers\AdminController::class, 'events'])->name('events');
+    Route::delete('/events/{event}', [\App\Http\Controllers\AdminController::class, 'destroyEvent'])->name('events.destroy');
 });
 
 // Guest portal (no login required)
 Route::get('/rsvp/{event_token}', [GuestController::class, 'rsvp'])->name('guest.rsvp');
 Route::post('/rsvp/{event_token}', [GuestController::class, 'storeGuest'])->name('guest.store');
 Route::get('/portal/{token}', [GuestController::class, 'portal'])->name('guest.portal');
+
+// Guest Support Routes
+Route::get('/portal/{token}/support', [\App\Http\Controllers\SupportController::class, 'guestIndex'])->name('guest.support');
+Route::post('/portal/{token}/support', [\App\Http\Controllers\SupportController::class, 'guestStoreTicket'])->name('guest.support.store');
+Route::post('/portal/support/{ticketId}/reply', [\App\Http\Controllers\SupportController::class, 'storeMessage'])->name('guest.support.reply');
 
 // Guest ticket payment flow
 Route::get('/guest/payment', [\App\Http\Controllers\PaymentController::class, 'showPaymentForm'])->name('guest.payment.form');

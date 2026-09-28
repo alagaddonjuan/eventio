@@ -75,6 +75,12 @@
             @csrf
 
             <div class="space-y-5">
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
+                    <label for="promo_code" class="block text-sm font-semibold text-slate-700 mb-2">Promo Code (Optional)</label>
+                    <input id="promo_code" type="text" name="promo_code" value="{{ old('promo_code') }}" 
+                        class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-colors text-slate-900 bg-white uppercase" placeholder="Enter code">
+                </div>
+
                 <div>
                     <label for="card_number" class="block text-sm font-semibold text-slate-700 mb-2">Card Number</label>
                     <input id="card_number" type="text" name="card_number" value="{{ old('card_number') }}" required autofocus

@@ -41,6 +41,7 @@
             }
         }
     </script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         .btn-theme {
             background-color: var(--theme-color, {{ $event->theme_color ?? "#0ea5e9" }});
@@ -93,13 +94,26 @@
             <form action="{{ route('guest.store', $event->tracking_access_token) }}" method="POST">
                 @csrf
                 <div class="mb-5">
-                    <label for="name" class="block text-sm font-semibold text-slate-700 mb-2">Your Name</label>
-                    <input type="text" id="name" name="name" value="{{ old('name') }}" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="e.g. John Doe">
+                    <label for="quantity" class="block text-sm font-semibold text-slate-700 mb-2">How many people are attending?</label>
+                    <select id="quantity" name="quantity" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">
+                        @for($i = 1; $i <= 10; $i++)
+                            <option value="{{ $i }}">{{ $i }} {{ $i == 1 ? 'Person' : 'People' }}</option>
+                        @endfor
+                    </select>
                 </div>
 
-                <div class="mb-5">
-                    <label for="email" class="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="john@example.com">
+                <div id="guests-container">
+                    <div class="guest-entry mb-5 p-4 border border-slate-100 rounded-xl bg-white shadow-sm">
+                        <h3 class="font-bold text-sm text-slate-800 mb-3 guest-title">Guest 1 (Primary Contact)</h3>
+                        <div class="mb-3">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Name</label>
+                            <input type="text" name="names[]" value="{{ old('names.0') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="e.g. John Doe">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+                            <input type="email" name="emails[]" value="{{ old('emails.0') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="john@example.com">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-8">
@@ -142,6 +156,10 @@
                 </div>
                 @endif
 
+                <div class="mb-8">
+                    <div class="g-recaptcha flex justify-center" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                </div>
+
                 <button type="submit" class="w-full text-white font-bold text-lg py-4 px-6 rounded-2xl btn-theme transition-transform hover:scale-[1.02] active:scale-[0.98]">
                     Send RSVP
                 </button>
@@ -156,16 +174,57 @@
                 var item = event.target.value;
                 var container = document.getElementById('ticketSelectionContainer');
                 var ticketInputs = document.querySelectorAll('input[name="ticket_id"]');
+                
+                // Show/hide quantity
+                var qtyContainer = document.getElementById('quantity').closest('.mb-5');
+                
                 if(container) {
                     if(item === 'attending') {
                         container.style.display = 'block';
                         ticketInputs.forEach(input => input.required = true);
+                        if(qtyContainer) qtyContainer.style.display = 'block';
                     } else {
                         container.style.display = 'none';
                         ticketInputs.forEach(input => input.required = false);
+                        if(qtyContainer) qtyContainer.style.display = 'none';
+                        
+                        // Reset to 1 guest if declined
+                        document.getElementById('quantity').value = '1';
+                        document.getElementById('quantity').dispatchEvent(new Event('change'));
                     }
                 }
             });
+        });
+
+        // Handle quantity change
+        document.getElementById('quantity').addEventListener('change', function(e) {
+            const qty = parseInt(e.target.value);
+            const container = document.getElementById('guests-container');
+            const currentCount = container.children.length;
+
+            if (qty > currentCount) {
+                // Add more guests
+                for (let i = currentCount + 1; i <= qty; i++) {
+                    const guestHtml = `
+                    <div class="guest-entry mb-5 p-4 border border-slate-100 rounded-xl bg-white shadow-sm" id="guest-${i}">
+                        <h3 class="font-bold text-sm text-slate-800 mb-3 guest-title">Guest ${i}</h3>
+                        <div class="mb-3">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Name</label>
+                            <input type="text" name="names[]" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="e.g. Guest ${i}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+                            <input type="email" name="emails[]" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="guest${i}@example.com">
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', guestHtml);
+                }
+            } else if (qty < currentCount) {
+                // Remove excess guests
+                for (let i = currentCount; i > qty; i--) {
+                    container.lastElementChild.remove();
+                }
+            }
         });
     </script>
     

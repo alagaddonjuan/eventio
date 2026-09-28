@@ -1,14 +1,21 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-bold text-2xl text-white leading-tight flex items-center justify-between">
-            <span class="flex items-center gap-3">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 class="font-bold text-2xl text-white leading-tight flex items-center gap-3">
                 <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
                 {{ __('Master Admin Command Center') }}
-            </span>
-        </h2>
+            </h2>
+            <div class="flex space-x-4 text-sm md:text-base">
+                <span class="text-white font-medium">Dashboard</span>
+                <span class="text-slate-600">|</span>
+                <a href="{{ route('admin.users') }}" class="text-indigo-400 hover:text-white transition font-medium">Users</a>
+                <span class="text-slate-600">|</span>
+                <a href="{{ route('admin.events') }}" class="text-indigo-400 hover:text-white transition font-medium">Events</a>
+            </div>
+        </div>
     </x-slot>
 
     <!-- Wrap the main content in a dark wrapper to ensure full dark mode for this page -->
@@ -85,6 +92,31 @@
                     <div class="relative z-10">
                         <div class="text-sm font-semibold text-cyan-400 tracking-wider uppercase mb-2">Total Guests</div>
                         <div class="text-4xl font-black text-white">{{ number_format($totalGuests) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Total Gross Revenue -->
+                <div class="relative bg-slate-900 overflow-hidden shadow-2xl rounded-2xl border border-slate-800 p-6 group hover:border-emerald-500/50 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <svg class="w-24 h-24 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="text-sm font-semibold text-emerald-400 tracking-wider uppercase mb-2">Total Volume (Gross)</div>
+                        <div class="text-4xl font-black text-white">₦{{ number_format($totalRevenue, 2) }}</div>
+                    </div>
+                </div>
+
+                <!-- Platform Revenue -->
+                <div class="relative bg-slate-900 overflow-hidden shadow-2xl rounded-2xl border border-slate-800 p-6 group hover:border-amber-500/50 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <svg class="w-24 h-24 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="text-sm font-semibold text-amber-400 tracking-wider uppercase mb-2">Platform Fees (Revenue)</div>
+                        <div class="text-4xl font-black text-white">₦{{ number_format($platformRevenue, 2) }}</div>
                     </div>
                 </div>
             </div>

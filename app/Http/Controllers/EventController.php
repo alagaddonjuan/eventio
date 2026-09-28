@@ -23,7 +23,12 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'theme_color' => 'nullable|string|max:7',
             'manual_directions' => 'nullable|string',
+            'banner_image' => 'nullable|image|max:5120',
         ]);
+
+        if ($request->hasFile('banner_image')) {
+            $validated['banner_image'] = $request->file('banner_image')->store('banners', 'public');
+        }
 
         $event = Auth::user()->events()->create(array_merge($validated, [
             'tracking_access_token' => Str::random(60),
@@ -64,7 +69,12 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'theme_color' => 'nullable|string|max:7',
             'manual_directions' => 'nullable|string',
+            'banner_image' => 'nullable|image|max:5120',
         ]);
+
+        if ($request->hasFile('banner_image')) {
+            $validated['banner_image'] = $request->file('banner_image')->store('banners', 'public');
+        }
 
         $originalVenue = $event->venue_name;
         $originalDate = $event->event_date;

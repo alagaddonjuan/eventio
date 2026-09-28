@@ -26,7 +26,7 @@
                     </div>
                 </div>
 
-                <form action="{{ route('events.update', $event) }}" method="POST" class="space-y-6">
+                <form action="{{ route('events.update', $event) }}" method="POST" class="space-y-6" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
@@ -63,6 +63,18 @@
                                 <span class="text-sm text-slate-500">Pick your brand color</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Event Banner Image (Optional)</label>
+                        @if($event->banner_image)
+                            <div class="mb-3">
+                                <p class="text-sm text-slate-500 mb-2">Current Banner:</p>
+                                <img src="{{ asset('storage/' . $event->banner_image) }}" alt="Event Banner" class="w-full h-32 object-cover rounded-xl border border-slate-200">
+                            </div>
+                        @endif
+                        <input type="file" name="banner_image" accept="image/*" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+                        <p class="text-xs text-slate-500 mt-1">Leave empty to keep current banner. Recommended size: 1200x400px (Max 5MB).</p>
                     </div>
                     
                     <div>

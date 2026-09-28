@@ -26,9 +26,13 @@ class GuestController extends Controller
         $event = Event::where('tracking_access_token', $eventToken)->firstOrFail();
 
         $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'quantity' => 'required|integer|min:1|max:10',
+            'names' => 'required|array|min:1',
+            'names.*' => 'required|string|max:255',
+            'emails' => 'required|array|min:1',
+            'emails.*' => 'required|email|max:255',
             'rsvp_status' => 'required|in:attending,declined',
+            'g-recaptcha-response' => ['required', new \App\Rules\Recaptcha()],
         ];
 
         if ($event->tickets()->count() > 0 && $request->input('rsvp_status') === 'attending') {
@@ -36,28 +40,28 @@ class GuestController extends Controller
         }
 
         $validated = $request->validate($rules);
-
-        // Prevent double filling / duplicate RSVPs by checking name or email
-        $existingGuest = $event->guests()
-            ->where(function ($query) use ($validated) {
-                $query->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($validated['name']))])
-                      ->orWhere('email', strtolower(trim($validated['email'])));
-            })
-            ->first();
-
-        if ($existingGuest) {
-            return back()->withErrors(['email' => 'An RSVP with this name or email has already been submitted for this event.'])->withInput();
+        $qty = $validated['quantity'];
+        
+        // Ensure arrays match quantity
+        if (count($validated['names']) != $qty || count($validated['emails']) != $qty) {
+            return back()->withErrors(['names' => 'Guest details do not match the selected quantity.'])->withInput();
         }
 
-        // Ensure ticket belongs to the event
+        // Check if any of these emails already registered for this event
+        $emails = array_map(function($e) { return strtolower(trim($e)); }, $validated['emails']);
+        $existingCount = $event->guests()->whereIn('email', $emails)->count();
+        if ($existingCount > 0) {
+            return back()->withErrors(['emails' => 'One or more of these email addresses have already registered for this event.'])->withInput();
+        }
+
+        // Ensure ticket belongs to the event and check capacity
         if (isset($validated['ticket_id'])) {
             $ticket = $event->tickets()->where('id', $validated['ticket_id'])->firstOrFail();
             
-            // Check capacity (very basic implementation)
             if ($ticket->capacity !== null) {
                 $sold = $ticket->guests()->count();
-                if ($sold >= $ticket->capacity) {
-                    return back()->withErrors(['ticket_id' => 'This ticket is sold out.']);
+                if (($sold + $qty) > $ticket->capacity) {
+                    return back()->withErrors(['ticket_id' => 'Not enough tickets available. Only ' . max(0, $ticket->capacity - $sold) . ' left.']);
                 }
             }
         }
@@ -73,22 +77,30 @@ class GuestController extends Controller
             }
         }
 
-        $uniqueToken = Str::random(40);
-        $barcodeData = $uniqueToken;
-
-        $guest = $event->guests()->create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'rsvp_status' => $validated['rsvp_status'],
-            'unique_token' => $uniqueToken,
-            'check_in_status' => 'pending',
-            'ticket_id' => $validated['ticket_id'] ?? null,
-            'barcode_data' => $barcodeData,
-        ]);
+        // If free or declined, process immediately
+        $primaryGuestToken = null;
         
-        \Illuminate\Support\Facades\Mail::to($guest->email)->send(new \App\Mail\GuestRsvpConfirmationEmail($guest));
+        for ($i = 0; $i < $qty; $i++) {
+            $uniqueToken = Str::random(40);
+            if ($i === 0) $primaryGuestToken = $uniqueToken; // Store first guest's token for redirect
+            
+            $guest = $event->guests()->create([
+                'name' => $validated['names'][$i],
+                'email' => $validated['emails'][$i],
+                'rsvp_status' => $validated['rsvp_status'],
+                'unique_token' => $uniqueToken,
+                'check_in_status' => 'pending',
+                'ticket_id' => $validated['ticket_id'] ?? null,
+                'barcode_data' => $uniqueToken,
+            ]);
+            
+            // Only send confirmation if attending
+            if ($validated['rsvp_status'] === 'attending') {
+                \Illuminate\Support\Facades\Mail::to($guest->email)->send(new \App\Mail\GuestRsvpConfirmationEmail($guest));
+            }
+        }
         
-        // Notify host for every 10th guest
+        // Notify host for every 10th guest across the whole event
         $totalGuests = $event->guests()->count();
         if ($totalGuests > 0 && $totalGuests % 10 === 0) {
             \Illuminate\Support\Facades\Mail::to($event->user->email)->send(new \App\Mail\HostBatchRsvpNotificationEmail($event, $totalGuests));
@@ -98,8 +110,8 @@ class GuestController extends Controller
             return back()->with('success', 'Thank you for letting us know!');
         }
 
-        // Redirect to their personal tracking portal
-        return redirect()->route('guest.portal', $guest->unique_token);
+        // Redirect primary contact to their portal
+        return redirect()->route('guest.portal', $primaryGuestToken);
     }
 
     /**

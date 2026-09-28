@@ -20,12 +20,18 @@ class Event extends Model
         'payment_status',
         'tracking_access_token',
         'manual_directions',
+        'stream_status',
+        'mux_stream_id',
+        'mux_playback_id',
+        'simulcast_targets',
+        'banner_image',
     ];
 
     protected $casts = [
         'event_date' => 'datetime',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'simulcast_targets' => 'array',
     ];
 
     /**
@@ -52,5 +58,20 @@ class Event extends Model
     public function eventMedia()
     {
         return $this->hasMany(EventMedia::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function promoCodes()
+    {
+        return $this->hasMany(PromoCode::class);
+    }
+
+    public function supportTickets()
+    {
+        return $this->hasMany(SupportTicket::class);
     }
 }

@@ -50,4 +50,9 @@ return [
         'token_secret' => env('MUX_TOKEN_SECRET'),
     ],
 
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
 ];
