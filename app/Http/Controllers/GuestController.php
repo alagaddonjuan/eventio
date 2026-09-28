@@ -62,6 +62,17 @@ class GuestController extends Controller
             }
         }
 
+        // Check if ticket requires payment
+        if (isset($validated['ticket_id'])) {
+            if ($ticket->price > 0 && $validated['rsvp_status'] === 'attending') {
+                session([
+                    'pending_rsvp_data' => $validated,
+                    'pending_event_token' => $eventToken
+                ]);
+                return redirect()->route('guest.payment.form');
+            }
+        }
+
         $uniqueToken = Str::random(40);
         $barcodeData = $uniqueToken;
 

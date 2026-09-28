@@ -63,6 +63,12 @@ Route::get('/rsvp/{event_token}', [GuestController::class, 'rsvp'])->name('guest
 Route::post('/rsvp/{event_token}', [GuestController::class, 'storeGuest'])->name('guest.store');
 Route::get('/portal/{token}', [GuestController::class, 'portal'])->name('guest.portal');
 
+// Guest ticket payment flow
+Route::get('/guest/payment', [\App\Http\Controllers\PaymentController::class, 'showPaymentForm'])->name('guest.payment.form');
+Route::post('/guest/payment/initiate', [\App\Http\Controllers\PaymentController::class, 'initiateCharge'])->name('guest.payment.initiate');
+Route::get('/guest/payment/otp', [\App\Http\Controllers\PaymentController::class, 'showOtpForm'])->name('guest.payment.otp');
+Route::post('/guest/payment/authorize', [\App\Http\Controllers\PaymentController::class, 'authorizeCharge'])->name('guest.payment.authorize');
+
 Route::post('/api/guest/{token}/check-in', [GuestController::class, 'checkIn'])->name('guest.checkin');
 
 // Photo Gallery API routes
