@@ -141,6 +141,32 @@ class EventController extends Controller
     }
 
     /**
+     * Send a manual blast email to all guests.
+     */
+    public function sendBlast(Request $request, Event $event)
+    {
+        if ($event->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'subject' => 'required|string|max:255',
+            'message_body' => 'required|string',
+        ]);
+
+        $guestEmails = $event->guests()->whereNotNull('email')->pluck('email')->toArray();
+
+        if (count($guestEmails) > 0) {
+            \Illuminate\Support\Facades\Mail::bcc($guestEmails)->send(
+                new \App\Mail\EventBlastEmail($event, $validated['subject'], $validated['message_body'])
+            );
+            return back()->with('success', 'Announcement email sent successfully to ' . count($guestEmails) . ' guests.');
+        }
+
+        return back()->with('error', 'No guests with email addresses found to send to.');
+    }
+
+    /**
      * Start Livestream
      */
     public function startStream(Request $request, Event $event, MuxService $mux)

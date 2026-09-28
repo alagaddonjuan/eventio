@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     // Livestream Routes
     Route::post('/events/{event}/start-stream', [EventController::class, 'startStream'])->name('events.start-stream');
     Route::post('/events/{event}/end-stream', [EventController::class, 'endStream'])->name('events.end-stream');
+    Route::post('/events/{event}/blast', [EventController::class, 'sendBlast'])->name('events.blast');
 
     // Ticket Routes
     Route::get('/events/{event}/tickets', [\App\Http\Controllers\TicketController::class, 'index'])->name('tickets.index');
