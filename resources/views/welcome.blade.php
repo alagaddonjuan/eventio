@@ -143,39 +143,32 @@
         </div>
     </footer>
 
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&libraries=places"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const venueInput = document.querySelector('input[name="venue_name"]');
             const latInput = document.querySelector('input[name="latitude"]');
             const lngInput = document.querySelector('input[name="longitude"]');
             
-            let timeoutId;
-            
-            if(venueInput && latInput && lngInput) {
-                venueInput.addEventListener('input', function() {
-                    clearTimeout(timeoutId);
-                    timeoutId = setTimeout(() => {
-                        const address = venueInput.value.trim();
-                        if (address.length > 5) {
-                            // Show loading state by slightly fading the inputs
-                            latInput.style.opacity = '0.5';
-                            lngInput.style.opacity = '0.5';
-                            
-                            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    if(data && data.length > 0) {
-                                        latInput.value = data[0].lat;
-                                        lngInput.value = data[0].lon;
-                                    }
-                                })
-                                .catch(err => console.error('Geocoding failed:', err))
-                                .finally(() => {
-                                    latInput.style.opacity = '1';
-                                    lngInput.style.opacity = '1';
-                                });
-                        }
-                    }, 1200); // Wait 1.2s after user stops typing
+            if(venueInput && latInput && lngInput && typeof google !== 'undefined') {
+                const autocomplete = new google.maps.places.Autocomplete(venueInput);
+                
+                // Prevent form submission when pressing enter on autocomplete
+                venueInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                    }
+                });
+
+                autocomplete.addListener('place_changed', function() {
+                    const place = autocomplete.getPlace();
+                    
+                    if (!place.geometry) {
+                        return;
+                    }
+                    
+                    latInput.value = place.geometry.location.lat();
+                    lngInput.value = place.geometry.location.lng();
                 });
             }
         });
