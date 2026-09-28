@@ -12,14 +12,14 @@ class MakeAdminCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'make:admin {email}';
+    protected $signature = 'user:make-admin {email}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Make a user an admin by email';
+    protected $description = 'Make a user an admin by their email address';
 
     /**
      * Execute the console command.
@@ -31,13 +31,12 @@ class MakeAdminCommand extends Command
 
         if (!$user) {
             $this->error("User with email {$email} not found.");
-            return Command::FAILURE;
+            return;
         }
 
         $user->is_admin = true;
         $user->save();
 
-        $this->info("User {$user->name} ({$user->email}) is now an admin.");
-        return Command::SUCCESS;
+        $this->info("User {$user->name} ({$email}) is now an Admin!");
     }
 }
