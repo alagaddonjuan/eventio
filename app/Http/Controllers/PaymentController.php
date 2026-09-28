@@ -85,6 +85,7 @@ class PaymentController extends Controller
         $initResponse = Http::withBasicAuth($clientId, $secretKey)
             ->post($baseUrl . '/api/pgs/payment/v2/createPayment', [
                 'amount' => $amount,
+                'currency' => 'NGN',
                 'email' => $email,
             ])->json();
 

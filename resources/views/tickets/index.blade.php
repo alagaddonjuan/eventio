@@ -49,9 +49,9 @@
                                         <div class="flex items-center">
                                             <svg class="w-4 h-4 mr-1.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                             @if($ticket->type === 'paid')
-                                                ${{ number_format($ticket->price, 2) }}
+                                                ₦{{ number_format($ticket->price, 2) }}
                                             @else
-                                                $0.00
+                                                ₦0.00
                                             @endif
                                         </div>
                                         <div class="flex items-center">
@@ -121,10 +121,10 @@
                             </div>
 
                             <div class="mb-5 hidden opacity-0 transition-opacity duration-300" id="priceContainer">
-                                <label class="block text-sm font-bold text-slate-700 mb-2">Price (USD)</label>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">Price (NGN)</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <span class="text-slate-500 font-bold">$</span>
+                                        <span class="text-slate-500 font-bold">₦</span>
                                     </div>
                                     <input type="number" step="0.01" min="0" name="price" id="priceField" class="w-full pl-8 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all duration-200 px-4 py-3" placeholder="25.00">
                                 </div>

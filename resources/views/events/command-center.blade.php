@@ -192,7 +192,7 @@
                             <div>
                                 <p class="font-bold text-slate-800 font-mono">{{ $promo->code }}</p>
                                 <p class="text-xs text-slate-500">
-                                    {{ $promo->discount_type === 'percentage' ? intval($promo->discount_amount).'%' : '$'.number_format($promo->discount_amount, 2) }} OFF
+                                    {{ $promo->discount_type === 'percentage' ? intval($promo->discount_amount).'%' : '₦'.number_format($promo->discount_amount, 2) }} OFF
                                     @if($promo->usage_limit)
                                         &middot; {{ $promo->times_used }}/{{ $promo->usage_limit }} used
                                     @else

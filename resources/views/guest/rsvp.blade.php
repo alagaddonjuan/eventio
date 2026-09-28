@@ -146,7 +146,7 @@
                                     @if($ticket->type === 'free')
                                         Free
                                     @else
-                                        ${{ number_format($ticket->price, 2) }}
+                                        ₦{{ number_format($ticket->price, 2) }}
                                     @endif
                                 </span>
                             </div>
