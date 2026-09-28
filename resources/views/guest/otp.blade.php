@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enter OTP - {{ config('app.name', 'Laravel') }}</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Verify your secure ticket payment with OTP to finalize your RSVP.">
+    <meta name="keywords" content="events, otp verification, secure checkout, rsvp">
+    <meta property="og:title" content="Verify Payment - {{ config('app.name', 'Laravel') }}">
+    <meta property="og:description" content="Verify your secure ticket payment with OTP to finalize your RSVP.">
+    <meta property="og:type" content="website">
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
