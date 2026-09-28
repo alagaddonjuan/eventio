@@ -91,4 +91,40 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const venueInput = document.querySelector('input[name="venue_name"]');
+            const latInput = document.querySelector('input[name="latitude"]');
+            const lngInput = document.querySelector('input[name="longitude"]');
+            
+            let timeoutId;
+            
+            if(venueInput && latInput && lngInput) {
+                venueInput.addEventListener('input', function() {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        const address = venueInput.value.trim();
+                        if (address.length > 5) {
+                            latInput.style.opacity = '0.5';
+                            lngInput.style.opacity = '0.5';
+                            
+                            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    if(data && data.length > 0) {
+                                        latInput.value = data[0].lat;
+                                        lngInput.value = data[0].lon;
+                                    }
+                                })
+                                .catch(err => console.error('Geocoding failed:', err))
+                                .finally(() => {
+                                    latInput.style.opacity = '1';
+                                    lngInput.style.opacity = '1';
+                                });
+                        }
+                    }, 1200);
+                });
+            }
+        });
+    </script>
 </x-app-layout>
