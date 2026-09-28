@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('guest_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->foreignId('ticket_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('event_id');
+            $table->foreignId('guest_id')->nullable();
+            $table->foreignId('ticket_id')->nullable();
             
             $table->string('reference')->unique();
             $table->decimal('amount', 10, 2);

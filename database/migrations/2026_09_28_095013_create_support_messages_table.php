@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('support_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('support_ticket_id')->constrained()->onDelete('cascade');
+            $table->foreignId('support_ticket_id');
             $table->enum('sender_type', ['guest', 'host']);
             $table->text('message');
             $table->timestamps();

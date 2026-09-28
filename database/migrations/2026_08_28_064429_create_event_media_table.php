@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('event_media', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('event_id');
             $table->string('uploader_type')->default('guest'); // host or guest
             $table->unsignedBigInteger('uploader_id')->nullable(); // user_id or guest_id
             $table->string('media_url');
