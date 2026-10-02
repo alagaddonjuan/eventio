@@ -16,7 +16,7 @@ class PaymentControllerTest extends TestCase
     public function test_payment_form_requires_pending_rsvp_session()
     {
         // Without session
-        $response = $this->get('/payment');
+        $response = $this->get('/guest/payment');
         
         $response->assertRedirect('/');
         $response->assertSessionHasErrors(['error']);
@@ -25,8 +25,25 @@ class PaymentControllerTest extends TestCase
     public function test_payment_form_loads_with_session()
     {
         $user = User::factory()->create();
-        $event = Event::factory()->create(['user_id' => $user->id]);
-        $ticket = Ticket::factory()->create(['event_id' => $event->id, 'price' => 5000]);
+        
+        $event = Event::create([
+            'user_id' => $user->id,
+            'title' => 'Test Event',
+            'event_date' => now()->addDays(5),
+            'venue_name' => 'Venue',
+            'latitude' => '1',
+            'longitude' => '1',
+            'payment_status' => 'paid',
+            'privacy_type' => 'public',
+            'tracking_access_token' => \Illuminate\Support\Str::random(10)
+        ]);
+
+        $ticket = Ticket::create([
+            'event_id' => $event->id,
+            'name' => 'General',
+            'price' => 5000,
+            'quantity' => 100
+        ]);
 
         $pendingRsvp = [
             'ticket_id' => $ticket->id,
@@ -37,7 +54,7 @@ class PaymentControllerTest extends TestCase
         ];
 
         $response = $this->withSession(['pending_rsvp_data' => $pendingRsvp])
-                         ->get('/payment');
+                         ->get('/guest/payment');
         
         $response->assertStatus(200);
         $response->assertViewIs('guest.payment');
