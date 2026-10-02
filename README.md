@@ -76,7 +76,14 @@ Eventio is a robust event management platform designed to help hosts seamlessly 
    php artisan migrate
    ```
 
-7. **Start the development server:**
+7. **Start the Node.js Tracking Server:**
+   The guest live tracking feature uses a separate Socket.io server. Open a new terminal window and start it:
+   ```bash
+   node server.js
+   ```
+   *(Note: Ensure your `PORT`, `FRONTEND_URL`, and `LARAVEL_API_URL` variables are configured in your `.env` so the socket server can connect to the frontend).*
+
+8. **Start the development server:**
    ```bash
    php artisan serve
    ```
