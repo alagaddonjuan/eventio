@@ -28,8 +28,7 @@ class EventControllerTest extends TestCase
         
         $response = $this->actingAs($user)->post('/events', [
             'title' => 'Test Event',
-            'start_date' => now()->addDays(2)->format('Y-m-d\TH:i'),
-            'end_date' => now()->addDays(3)->format('Y-m-d\TH:i'),
+            'event_date' => now()->addDays(2)->format('Y-m-d\TH:i'),
             'venue_name' => 'Test Venue',
             'latitude' => '10.0',
             'longitude' => '20.0',
