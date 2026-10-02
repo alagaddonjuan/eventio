@@ -47,7 +47,7 @@
     <!-- Map Container -->
     <div id="map" class="absolute inset-0 z-0 hidden w-full h-full"></div>
 
-    <main class="relative z-10 flex flex-col h-screen justify-end pb-8 px-4">
+    <main class="relative z-10 flex flex-col min-h-screen justify-center py-8 px-4">
         
         <!-- Welcome Card (Phase A & B) -->
         <div id="welcome-card" class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-8 transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform translate-y-0 w-full max-w-md mx-auto relative overflow-hidden border border-white">
@@ -99,7 +99,7 @@
                         <div class="text-lg font-bold text-slate-900">{{ $guest->ticket->name }}</div>
                         <div class="text-xs text-slate-500 uppercase">{{ $guest->ticket->type }}</div>
                         <div class="mt-4 flex justify-center bg-white p-2 rounded">
-                            {!! QrCode::size(150)->generate($guest->barcode_data ?? $guest->unique_token) !!}
+                            {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(150)->generate(route('guest.verify', $guest->unique_token)) !!}
                         </div>
                         <div class="text-[10px] text-center text-slate-400 mt-1 font-mono tracking-widest">{{ substr($guest->barcode_data ?? $guest->unique_token, 0, 12) }}...</div>
                     </div>
@@ -176,7 +176,11 @@
                 </div>
             </div>
             
-            <p class="text-[13px] font-medium text-center text-slate-400 mt-5">Keep this screen open for accurate tracking.</p>
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ $guest->event->latitude }},{{ $guest->event->longitude }}" target="_blank" class="mt-5 w-full block text-center py-3.5 rounded-xl text-white font-bold text-[15px] shadow-lg hover:-translate-y-0.5 transition-all duration-200" style="background-color: {{ $guest->event->theme_color ?? '#0ea5e9' }}">
+                Open Maps Navigation
+            </a>
+            
+            <p class="text-[13px] font-medium text-center text-slate-400 mt-4">Keep this screen open for accurate tracking.</p>
         </div>
 
         <div class="mt-8 text-center text-[11px] font-medium" style="color: {{ $guest->event->theme_color ?? '#0ea5e9' }}90; text-shadow: 0 1px 2px rgba(255,255,255,0.8);">
@@ -196,18 +200,19 @@
             guestId: {{ $guest->id ?? 0 }},
             guestName: "{{ $guest->name ?? 'Guest' }}",
             uniqueToken: "{{ $guest->unique_token ?? '' }}",
-            nodeServerUrl: "http://localhost:3000",
+            eventToken: "{{ $guest->event->tracking_access_token ?? '' }}",
+            nodeServerUrl: "{{ env('NODE_SERVER_URL', 'http://localhost:3000') }}",
             venueLat: {{ $guest->event->latitude ?? 0 }},
             venueLng: {{ $guest->event->longitude ?? 0 }}
         };
     </script>
     
     <!-- Load Socket.io and Google Maps -->
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key', env('GOOGLE_MAPS_API_KEY')) }}&libraries=geometry"></script>
+    <script src="{{ env('NODE_SERVER_URL', 'http://localhost:3000') }}/socket.io/socket.io.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ trim(config('services.google.maps_key', env('GOOGLE_MAPS_API_KEY'))) }}&libraries=geometry"></script>
     
     <!-- Include the tracker logic -->
-    <script src="/js/guest-tracker.js"></script>
+    <script src="/js/guest-tracker.js?v={{ time() }}"></script>
 
     <script>
         // Simple UI transition logic
@@ -228,7 +233,15 @@
                 }, 50);
                 
                 // Call the initialization function from guest-tracker.js
-                if(typeof initGuestTracker === 'function') {
+                if(typeof startJourney === 'function') {
+                    startJourney(
+                        window.EVENT_CONFIG.venueLat, 
+                        window.EVENT_CONFIG.venueLng, 
+                        window.EVENT_CONFIG.nodeServerUrl, 
+                        window.EVENT_CONFIG.uniqueToken,
+                        `/api/guest/${window.EVENT_CONFIG.uniqueToken}/check-in`
+                    );
+                } else if(typeof initGuestTracker === 'function') {
                     initGuestTracker();
                 }
             }, 500);
@@ -252,12 +265,22 @@
             statusEl.classList.add('text-brand-600');
             
             try {
-                const res = await fetch(`/api/events/${window.EVENT_CONFIG.uniqueToken}/gallery`, {
+                const res = await fetch(`/api/events/${window.EVENT_CONFIG.eventToken}/gallery`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
                 
-                const data = await res.json();
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(parseErr) {
+                    throw new Error(`Status ${res.status}: ${text.substring(0, 60)}`);
+                }
+                
                 if(data.status === 'success') {
                     statusEl.innerText = "Photo uploaded successfully! 🎉";
                     statusEl.classList.add('text-green-600');
@@ -266,7 +289,7 @@
                     statusEl.classList.add('text-red-600');
                 }
             } catch (err) {
-                statusEl.innerText = "Network error during upload.";
+                statusEl.innerText = "Error: " + err.message;
                 statusEl.classList.add('text-red-600');
             }
             

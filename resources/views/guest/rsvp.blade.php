@@ -157,7 +157,9 @@
                 @endif
 
                 <div class="mb-8">
-                    <div class="g-recaptcha flex justify-center" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                    @if(config('services.recaptcha.site_key'))
+                        <div class="g-recaptcha flex justify-center" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                    @endif
                 </div>
 
                 <button type="submit" class="w-full text-white font-bold text-lg py-4 px-6 rounded-2xl btn-theme transition-transform hover:scale-[1.02] active:scale-[0.98]">

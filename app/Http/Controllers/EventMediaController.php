@@ -41,13 +41,14 @@ class EventMediaController extends Controller
             $file = $request->file('image');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             
-            // Store locally in public/storage/events
-            $path = $file->storeAs('events/' . $event->id, $filename, 'public');
+            // Store directly in public directory to avoid symlink issues on live servers
+            $destinationPath = public_path('uploads/events/' . $event->id);
+            $file->move($destinationPath, $filename);
 
             $media = $event->eventMedia()->create([
                 'uploader_type' => $request->uploader_type,
                 'uploader_id' => $request->uploader_id,
-                'media_url' => Storage::url($path),
+                'media_url' => '/uploads/events/' . $event->id . '/' . $filename,
                 'media_type' => 'image',
             ]);
 

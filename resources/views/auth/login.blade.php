@@ -44,6 +44,7 @@
             }
         }
     </script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-slate-50 font-sans min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
     <!-- Abstract Background -->
@@ -97,6 +98,15 @@
                     </div>
                     <x-input-error :messages="$errors->get('password')" class="mt-2 text-red-500 text-sm" />
                 </div>
+            </div>
+
+            <div class="mt-4 flex justify-center">
+                @if(config('services.recaptcha.site_key'))
+                    <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                @endif
+                @if ($errors->has('g-recaptcha-response'))
+                    <span class="text-red-500 text-sm mt-1 block">{{ $errors->first('g-recaptcha-response') }}</span>
+                @endif
             </div>
 
             <div class="mt-6 flex items-center">

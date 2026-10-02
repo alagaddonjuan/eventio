@@ -38,6 +38,29 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's bank account details.
+     */
+    public function updateBank(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bank_name' => ['required', 'string', 'max:255'],
+            'account_number' => ['required', 'string', 'max:255'],
+            'account_name' => ['required', 'string', 'max:255'],
+            'bank_code' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+        
+        if ($user->bankAccount) {
+            $user->bankAccount->update($validated);
+        } else {
+            $user->bankAccount()->create($validated);
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'bank-updated');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

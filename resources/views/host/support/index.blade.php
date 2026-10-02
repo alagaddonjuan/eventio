@@ -63,11 +63,11 @@
 
                                     @if($ticket->status === 'open')
                                     <div class="p-4 bg-white border-t border-slate-200">
-                                        <form action="{{ route('support.reply', $ticket->id) }}" method="POST" class="flex gap-3">
+                                        <form action="{{ route('support.reply', $ticket->id) }}" method="POST" class="flex flex-col sm:flex-row gap-3">
                                             @csrf
                                             <input type="hidden" name="host_reply" value="1">
-                                            <input type="text" name="message" required placeholder="Type your reply to {{ $ticket->guest->name }}..." class="flex-1 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 text-sm">
-                                            <button type="submit" class="bg-brand-600 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-brand-700 transition">Send Reply</button>
+                                            <input type="text" name="message" required placeholder="Type your reply to {{ $ticket->guest->name }}..." class="flex-1 w-full rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 text-sm">
+                                            <button type="submit" class="w-full sm:w-auto bg-brand-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-brand-700 transition shadow-sm">Send Reply</button>
                                         </form>
                                     </div>
                                     @endif

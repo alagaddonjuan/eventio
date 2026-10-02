@@ -110,8 +110,20 @@ class EventController extends Controller
      */
     public function dashboard()
     {
-        $events = Auth::user()->events()->latest()->get();
-        return view('dashboard', compact('events'));
+        $user = Auth::user();
+        $events = $user->events()->latest()->get();
+        
+        $eventIds = $events->pluck('id');
+        
+        $totalSales = \App\Models\Payment::whereIn('event_id', $eventIds)
+            ->where('status', 'successful')
+            ->sum('amount');
+            
+        $totalPayout = \App\Models\Payment::whereIn('event_id', $eventIds)
+            ->where('status', 'successful')
+            ->sum('host_payout');
+
+        return view('dashboard', compact('events', 'totalSales', 'totalPayout'));
     }
 
     /**
@@ -131,7 +143,7 @@ class EventController extends Controller
         return view('events.command-center', [
             'event' => $event,
             'guests' => $guests,
-            'nodeServerUrl' => config('services.node.url', 'http://localhost:3000')
+            'nodeServerUrl' => env('NODE_SERVER_URL', 'http://localhost:3000')
         ]);
     }
 

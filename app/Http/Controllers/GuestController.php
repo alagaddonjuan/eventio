@@ -32,8 +32,11 @@ class GuestController extends Controller
             'emails' => 'required|array|min:1',
             'emails.*' => 'required|email|max:255',
             'rsvp_status' => 'required|in:attending,declined',
-            'g-recaptcha-response' => ['required', new \App\Rules\Recaptcha()],
         ];
+
+        if (config('services.recaptcha.site_key')) {
+            $rules['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha()];
+        }
 
         if ($event->tickets()->count() > 0 && $request->input('rsvp_status') === 'attending') {
             $rules['ticket_id'] = 'required|exists:tickets,id';
@@ -164,5 +167,14 @@ class GuestController extends Controller
             'status' => 'success',
             'message' => 'Check-in successful.'
         ]);
+    }
+
+    /**
+     * Show the ticket verification page when a QR code is scanned.
+     */
+    public function verifyTicket($token)
+    {
+        $guest = Guest::with(['event', 'ticket'])->where('unique_token', $token)->firstOrFail();
+        return view('guest.verify', compact('guest'));
     }
 }

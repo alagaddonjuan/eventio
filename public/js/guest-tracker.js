@@ -19,6 +19,12 @@ const GEOFENCE_RADIUS_METERS = 100;
  * Initializes the connection to the Node.js Socket.io server
  */
 function initSocketConnection(nodeUrl, guestToken) {
+    if (typeof io === 'undefined') {
+        console.error("Socket.io library not loaded. Is the Node server running and accessible?");
+        alert("Real-time tracking unavailable. Could not connect to tracker server.");
+        return;
+    }
+    
     // Assuming socket.io.js is loaded in the Blade template
     socket = io(nodeUrl, {
         auth: {
@@ -67,25 +73,39 @@ async function startJourney(eventLat, eventLng, nodeUrl, guestToken, webhookUrl)
     if (isTracking) return;
     isTracking = true;
 
-    initSocketConnection(nodeUrl, guestToken);
-    await requestWakeLock();
+    try {
+        initSocketConnection(nodeUrl, guestToken);
+        await requestWakeLock();
 
-    // UI Updates (Assuming specific IDs exist in Blade template)
-    document.getElementById('start-journey-btn').style.display = 'none';
-    document.getElementById('tracking-status').innerText = 'Tracking Active... Keep screen on.';
+        // UI Updates
+        const startBtn = document.getElementById('start-journey-btn');
+        const statusEl = document.getElementById('tracking-status');
+        if (startBtn) startBtn.style.display = 'none';
+        if (statusEl) statusEl.innerText = 'Tracking Active... Keep screen on.';
 
-    if (navigator.geolocation) {
-        watchId = navigator.geolocation.watchPosition(
-            (position) => handlePositionUpdate(position, eventLat, eventLng, webhookUrl),
-            (error) => handleGeolocationError(error),
-            {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 10000
-            }
-        );
-    } else {
-        alert("Geolocation is not supported by this browser.");
+        if (navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (position) => handlePositionUpdate(position, eventLat, eventLng, webhookUrl),
+                (error) => {
+                    handleGeolocationError(error);
+                    isTracking = false;
+                    if (startBtn) startBtn.style.display = 'block';
+                    if (statusEl) statusEl.innerText = 'Location access denied or failed.';
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 10000
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by this browser.");
+            isTracking = false;
+        }
+    } catch (e) {
+        console.error("Failed to start journey tracking:", e);
+        alert("An error occurred trying to start tracking: " + e.message);
+        isTracking = false;
     }
 }
 
@@ -118,16 +138,42 @@ function handlePositionUpdate(position, eventLat, eventLng, webhookUrl) {
         lastPollTime = now;
         lastPolledPosition = { lat: currentLat, lng: currentLng };
         
-        // Optional: Calculate ETA client side via Google Distance Matrix JS SDK here before emitting
-        // For brevity, omitting the exact Google Maps API call here, emitting 'Calculating...'
-        let etaText = 'Calculating...'; 
-        
-        if (socket && socket.connected) {
-            socket.emit('guest_location_update', {
-                lat: currentLat,
-                lng: currentLng,
-                etaText: etaText
+        // Calculate ETA client side via Google Distance Matrix JS SDK
+        if (typeof google !== 'undefined' && google.maps && google.maps.DistanceMatrixService) {
+            const service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [new google.maps.LatLng(currentLat, currentLng)],
+                destinations: [new google.maps.LatLng(eventLat, eventLng)],
+                travelMode: 'DRIVING'
+            }, (response, status) => {
+                let etaText = 'Driving...';
+                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                    etaText = response.rows[0].elements[0].duration.text;
+                }
+                
+                const etaEl = document.getElementById('eta-display');
+                if (etaEl) etaEl.innerText = etaText;
+                
+                if (socket && socket.connected) {
+                    socket.emit('guest_location_update', {
+                        lat: currentLat,
+                        lng: currentLng,
+                        etaText: etaText
+                    });
+                }
             });
+        } else {
+            let etaText = 'En Route';
+            const etaEl = document.getElementById('eta-display');
+            if (etaEl) etaEl.innerText = etaText;
+            
+            if (socket && socket.connected) {
+                socket.emit('guest_location_update', {
+                    lat: currentLat,
+                    lng: currentLng,
+                    etaText: etaText
+                });
+            }
         }
     }
 }
@@ -155,8 +201,15 @@ function triggerCheckIn(webhookUrl) {
     .then(data => {
         if (data.status === 'success') {
             // UI shifts to Welcome / Post-Event Photo Wall
-            document.getElementById('tracking-container').style.display = 'none';
-            document.getElementById('welcome-container').style.display = 'block';
+            const trackingContainer = document.getElementById('tracking-container');
+            const welcomeContainer = document.getElementById('welcome-container');
+            if (trackingContainer) trackingContainer.style.display = 'none';
+            if (welcomeContainer) welcomeContainer.style.display = 'block';
+            
+            // Show alert if the UI elements aren't present
+            if (!trackingContainer && !welcomeContainer) {
+                alert("Welcome! You have arrived at the event venue.");
+            }
         }
     })
     .catch(error => console.error('Check-in error:', error));

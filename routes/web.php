@@ -7,7 +7,13 @@ use App\Http\Controllers\RealtimeAuthController;
 use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
-    return view('welcome');
+    $upcomingEvents = \App\Models\Event::with('tickets')
+        ->where('event_date', '>=', now())
+        ->orderBy('event_date', 'asc')
+        ->take(6) // Show top 6 upcoming events
+        ->get();
+        
+    return view('welcome', compact('upcomingEvents'));
 })->name('home');
 
 Route::get('/dashboard', [EventController::class, 'dashboard'])
@@ -59,6 +65,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/bank', [ProfileController::class, 'updateBank'])->name('profile.bank');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
@@ -89,8 +96,8 @@ Route::post('/portal/support/{ticketId}/reply', [\App\Http\Controllers\SupportCo
 // Guest ticket payment flow
 Route::get('/guest/payment', [\App\Http\Controllers\PaymentController::class, 'showPaymentForm'])->name('guest.payment.form');
 Route::post('/guest/payment/initiate', [\App\Http\Controllers\PaymentController::class, 'initiateCharge'])->name('guest.payment.initiate');
-Route::get('/guest/payment/otp', [\App\Http\Controllers\PaymentController::class, 'showOtpForm'])->name('guest.payment.otp');
-Route::post('/guest/payment/authorize', [\App\Http\Controllers\PaymentController::class, 'authorizeCharge'])->name('guest.payment.authorize');
+Route::get('/guest/payment/status', [\App\Http\Controllers\PaymentController::class, 'checkStatus'])->name('guest.payment.status');
+Route::get('/guest/payment/callback', [\App\Http\Controllers\PaymentController::class, 'handleCallback'])->name('guest.payment.callback');
 
 Route::post('/api/guest/{token}/check-in', [GuestController::class, 'checkIn'])->name('guest.checkin');
 
@@ -99,3 +106,4 @@ Route::get('/api/events/{token}/gallery', [\App\Http\Controllers\EventMediaContr
 Route::post('/api/events/{token}/gallery', [\App\Http\Controllers\EventMediaController::class, 'store']);
 
 require __DIR__.'/auth.php';
+Route::get('/verify/{token}', [GuestController::class, 'verifyTicket'])->name('guest.verify');

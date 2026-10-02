@@ -1,8 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Command Center - ' . $event->title) }}
-        </h2>
+        <div class="flex justify-between items-center w-full">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Command Center - ' . $event->title) }}
+            </h2>
+            <div class="flex space-x-1 bg-slate-100 p-1 rounded-xl">
+                <button class="py-1.5 px-4 text-sm font-bold text-brand-700 bg-white rounded-lg shadow-sm border border-slate-200/60" id="tab-guests" onclick="switchTab('guests')">Guests</button>
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-stream" onclick="switchTab('stream')">Stream</button>
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-gallery" onclick="switchTab('gallery')">Gallery</button>
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-blast" onclick="switchTab('blast')">Email</button>
+                @if($event->payment_status === 'paid')
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-promo" onclick="switchTab('promo')">Promos</button>
+                @endif
+            </div>
+        </div>
     </x-slot>
 
 <div class="h-[calc(100vh-73px)] flex">
@@ -35,16 +46,7 @@
                 <button onclick="navigator.clipboard.writeText('{{ url('/rsvp/'.$event->tracking_access_token) }}'); alert('Copied!')" class="hover:text-slate-700 transition">Copy</button>
             </div>
             
-            <!-- Tabs -->
-            <div class="mt-6 flex border-b border-slate-200 overflow-x-auto whitespace-nowrap">
-                <button class="px-4 pb-2 text-sm font-semibold text-brand-600 border-b-2 border-brand-600" id="tab-guests" onclick="switchTab('guests')">Guests</button>
-                <button class="px-4 pb-2 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700" id="tab-stream" onclick="switchTab('stream')">Stream</button>
-                <button class="px-4 pb-2 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700" id="tab-gallery" onclick="switchTab('gallery')">Gallery</button>
-                <button class="px-4 pb-2 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700" id="tab-blast" onclick="switchTab('blast')">Email</button>
-                @if($event->payment_status === 'paid')
-                <button class="px-4 pb-2 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700" id="tab-promo" onclick="switchTab('promo')">Promo Codes</button>
-                @endif
-            </div>
+            <!-- Tabs moved to map header -->
 
             <div class="mt-4">
                 <a href="{{ route('support.index', $event) }}" class="flex items-center justify-between w-full p-3 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition border border-amber-200">
@@ -222,7 +224,7 @@
         <div id="host-map" class="absolute inset-0 w-full h-full"></div>
         
         <!-- Map Overlay Controls -->
-        <div class="absolute top-6 left-6 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl shadow-lg border border-white/50 flex space-x-5">
+        <div class="absolute top-6 left-6 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl shadow-lg border border-white/50 flex space-x-5 z-20">
             <div class="flex items-center">
                 <span class="w-3.5 h-3.5 rounded-full bg-brand-500 mr-2.5 shadow-sm border border-white"></span>
                 <span class="text-sm font-semibold text-slate-700">Guests en Route</span>
@@ -240,8 +242,8 @@
 </div>
 
     @push('scripts')
-    <script src="{{ $nodeServerUrl }}/socket.io/socket.io.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key', env('GOOGLE_MAPS_API_KEY')) }}"></script>
+    <script src="{{ env('NODE_SERVER_URL', 'http://localhost:3000') }}/socket.io/socket.io.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ trim(config('services.google.maps_key', env('GOOGLE_MAPS_API_KEY'))) }}&callback=initHostMap" async defer></script>
 <script>
     const eventLat = {{ $event->latitude }};
     const eventLng = {{ $event->longitude }};
@@ -504,7 +506,6 @@
     });
 
     window.onload = function() {
-        initHostMap();
         fetchGallery();
     };
 
@@ -518,8 +519,8 @@
                 panel.classList.add('hidden');
                 panel.classList.remove('block');
                 
-                btn.classList.remove('text-brand-600', 'border-brand-600');
-                btn.classList.add('text-slate-500', 'border-transparent');
+                btn.classList.remove('text-brand-700', 'bg-white', 'shadow-sm', 'border-slate-200/60');
+                btn.classList.add('text-slate-500', 'hover:text-slate-700', 'hover:bg-slate-200/50', 'border-transparent');
             }
         });
         
@@ -530,8 +531,8 @@
             activePanel.classList.remove('hidden');
             activePanel.classList.add('block');
             
-            activeBtn.classList.remove('text-slate-500', 'border-transparent');
-            activeBtn.classList.add('text-brand-600', 'border-brand-600');
+            activeBtn.classList.remove('text-slate-500', 'hover:text-slate-700', 'hover:bg-slate-200/50', 'border-transparent');
+            activeBtn.classList.add('text-brand-700', 'bg-white', 'shadow-sm', 'border-slate-200/60');
         }
     }
 

@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/realtime/verify',
             'api/guest/*/check-in',
+            'api/events/*/gallery',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

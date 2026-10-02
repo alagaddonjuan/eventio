@@ -71,8 +71,9 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('guest.payment.initiate') }}">
+        <form id="paymentForm" method="POST" action="{{ route('guest.payment.initiate') }}" target="_blank">
             @csrf
+            <input type="hidden" name="payment_reference" id="payment_reference" value="{{ $paymentReference ?? '' }}">
 
             <div class="space-y-5">
                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
@@ -81,30 +82,6 @@
                         class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-colors text-slate-900 bg-white uppercase" placeholder="Enter code">
                 </div>
 
-                <div>
-                    <label for="card_number" class="block text-sm font-semibold text-slate-700 mb-2">Card Number</label>
-                    <input id="card_number" type="text" name="card_number" value="{{ old('card_number') }}" required autofocus
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-colors text-slate-900 bg-slate-50/50" placeholder="0000 0000 0000 0000">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="expiry_month" class="block text-sm font-semibold text-slate-700 mb-2">Expiry Month</label>
-                        <input id="expiry_month" type="text" name="expiry_month" value="{{ old('expiry_month') }}" required maxlength="2"
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-colors text-slate-900 bg-slate-50/50" placeholder="MM">
-                    </div>
-                    <div>
-                        <label for="expiry_year" class="block text-sm font-semibold text-slate-700 mb-2">Expiry Year</label>
-                        <input id="expiry_year" type="text" name="expiry_year" value="{{ old('expiry_year') }}" required maxlength="2"
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-colors text-slate-900 bg-slate-50/50" placeholder="YY">
-                    </div>
-                </div>
-
-                <div>
-                    <label for="cvv" class="block text-sm font-semibold text-slate-700 mb-2">CVV</label>
-                    <input id="cvv" type="text" name="cvv" required maxlength="4"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-colors text-slate-900 bg-slate-50/50" placeholder="123">
-                </div>
             </div>
 
             <button type="submit" class="w-full mt-8 bg-slate-900 text-white font-semibold py-3.5 px-4 rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20 active:scale-[0.98] flex items-center justify-center gap-2">
@@ -119,5 +96,103 @@
         </form>
 
     </div>
+
+    <!-- Polling Overlay -->
+    <div id="pollingOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-brand-500 overflow-hidden">
+                <div class="w-1/2 h-full bg-brand-400 animate-[bounce_2s_infinite]"></div>
+            </div>
+            
+            <div class="w-20 h-20 mx-auto mb-6 bg-brand-50 rounded-full flex items-center justify-center">
+                <svg class="w-10 h-10 text-brand-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Awaiting Payment</h2>
+            <p class="text-slate-500 mb-6">A new tab has opened for you to complete your payment. Please do not close this window.</p>
+            
+            <div class="bg-amber-50 text-amber-800 text-sm p-4 rounded-xl text-left border border-amber-200">
+                <p class="font-semibold mb-1 flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Important:
+                </p>
+                <p>Once you complete the payment in the other tab, this page will automatically redirect you to your ticket.</p>
+            </div>
+            
+            <button type="button" id="cancelPollingBtn" class="mt-6 text-sm text-slate-500 hover:text-slate-700 underline underline-offset-4">Cancel and return</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('paymentForm');
+            const overlay = document.getElementById('pollingOverlay');
+            const cancelBtn = document.getElementById('cancelPollingBtn');
+            let pollInterval = null;
+            
+            // Give the backend a couple of seconds to redirect the new tab to RexPay,
+            // otherwise our first poll might not find the reference in the session yet.
+            form.addEventListener('submit', function(e) {
+                // Show overlay
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                
+                // Start polling after a short delay
+                setTimeout(startPolling, 3000);
+            });
+            
+            cancelBtn.addEventListener('click', function() {
+                stopPolling();
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            });
+            
+            function startPolling() {
+                if (pollInterval) clearInterval(pollInterval);
+                
+                pollInterval = setInterval(function() {
+                    let ref = document.getElementById('payment_reference').value;
+                    let url = '{{ route('guest.payment.status') }}';
+                    if (ref) {
+                        url += '?ref=' + encodeURIComponent(ref);
+                    }
+                    
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'successful' && data.redirect) {
+                                stopPolling();
+                                window.location.href = data.redirect;
+                            }
+                            if (data.debug) {
+                                let debugDiv = document.getElementById('debug-info');
+                                if (!debugDiv) {
+                                    debugDiv = document.createElement('pre');
+                                    debugDiv.id = 'debug-info';
+                                    debugDiv.style.marginTop = '20px';
+                                    debugDiv.style.fontSize = '10px';
+                                    debugDiv.style.whiteSpace = 'pre-wrap';
+                                    debugDiv.style.wordBreak = 'break-all';
+                                    let warningBox = document.querySelector('.bg-amber-50');
+                                    if (warningBox) warningBox.after(debugDiv);
+                                }
+                                debugDiv.textContent = 'Debug: ' + (typeof data.debug === 'object' ? JSON.stringify(data.debug) : data.debug);
+                            }
+                        })
+                        .catch(err => console.error('Polling error:', err));
+                }, 3000); // Check every 3 seconds
+            }
+            
+            function stopPolling() {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+            }
+        });
+    </script>
 </body>
 </html>

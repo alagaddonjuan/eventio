@@ -103,7 +103,9 @@
                 </div>
                 
                 <div class="mt-4 flex justify-center">
-                    <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                    @if(config('services.recaptcha.site_key'))
+                        <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                    @endif
                     @if ($errors->has('g-recaptcha-response'))
                         <span class="text-red-500 text-sm mt-1 block">{{ $errors->first('g-recaptcha-response') }}</span>
                     @endif

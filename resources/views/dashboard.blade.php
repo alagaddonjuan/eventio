@@ -7,6 +7,28 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            
+            <!-- Financial Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-indigo-500">
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Gross Ticket Sales</p>
+                    <p class="mt-2 text-3xl font-extrabold text-gray-900">₦{{ number_format($totalSales, 2) }}</p>
+                    <p class="mt-1 text-sm text-gray-500">Total revenue generated from all events.</p>
+                </div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-emerald-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Your Payouts</p>
+                            <p class="mt-2 text-3xl font-extrabold text-gray-900">₦{{ number_format($totalPayout, 2) }}</p>
+                            <p class="mt-1 text-sm text-gray-500">Expected payout to your bank account.</p>
+                        </div>
+                        @if(!auth()->user()->bankAccount || !auth()->user()->bankAccount->account_number)
+                        <a href="{{ route('profile.edit') }}" class="text-xs font-bold text-red-600 bg-red-50 py-1 px-3 rounded-full hover:bg-red-100">Setup Bank details →</a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-between items-center mb-6">
@@ -23,12 +45,16 @@
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guests</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stats</th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($events as $event)
+                                    @php
+                                        $eventSales = \App\Models\Payment::where('event_id', $event->id)->where('status', 'successful')->sum('amount');
+                                        $eventPayout = \App\Models\Payment::where('event_id', $event->id)->where('status', 'successful')->sum('host_payout');
+                                    @endphp
                                     <tr class="hover:bg-indigo-50 transition-colors duration-200 group">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">{{ $event->title }}</div>
@@ -38,9 +64,15 @@
                                             {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y h:i A') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 mb-1">
                                                 {{ $event->guests->count() }} guests
                                             </span>
+                                            @if($event->payment_status === 'paid')
+                                            <div class="text-xs text-slate-500 mt-1">
+                                                Gross: ₦{{ number_format($eventSales, 2) }}<br>
+                                                Payout: <span class="font-bold text-emerald-600">₦{{ number_format($eventPayout, 2) }}</span>
+                                            </div>
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                                             <a href="{{ route('events.edit', $event) }}" class="text-amber-600 hover:text-amber-900">Edit</a>
