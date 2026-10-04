@@ -33,13 +33,18 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen flex flex-col bg-gray-100">
+    <body class="font-sans antialiased bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+        
+        <!-- Background Elements for Premium Feel -->
+        <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="fixed bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="min-h-screen flex flex-col relative z-10">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-white shadow">
+                <header class="bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
@@ -47,20 +52,23 @@
             @endisset
 
             <!-- Page Content -->
-            <main class="flex-grow">
+            <main class="flex-grow pb-12">
                 {{ $slot }}
             </main>
 
             <!-- Footer -->
-            <footer class="bg-white border-t border-gray-200 mt-auto py-6">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+            <footer class="bg-white/5 backdrop-blur-xl border-t border-white/10 mt-auto py-8">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400">
                     <div class="mb-4 md:mb-0 text-center md:text-left">
-                        &copy; {{ date('Y') }} {{ config('app.name', 'Eventio') }}. Powered by <a href="https://q4iltd.com" target="_blank" class="font-bold text-indigo-600 hover:underline">Q4I</a>
+                        &copy; {{ date('Y') }} {{ config('app.name', 'Eventio') }}. Powered by <a href="https://q4iltd.com" target="_blank" class="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Q4I</a>
                     </div>
-                    <div class="flex items-center justify-center space-x-4">
-                        <a href="{{ route('terms') }}" class="hover:text-indigo-600 transition">Terms & Conditions</a>
-                        <span class="text-gray-300">|</span>
-                        <a href="{{ route('privacy') }}" class="hover:text-indigo-600 transition">Privacy Policy</a>
+                    <div class="flex flex-wrap items-center justify-center space-x-6">
+                        <a href="{{ route('changelog') }}" class="hover:text-white transition-colors flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
+                            Changelog
+                        </a>
+                        <a href="{{ route('terms') }}" class="hover:text-white transition-colors">Terms & Conditions</a>
+                        <a href="{{ route('privacy') }}" class="hover:text-white transition-colors">Privacy Policy</a>
                     </div>
                 </div>
             </footer>

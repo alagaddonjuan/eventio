@@ -100,6 +100,8 @@
                 &copy; {{ date('Y') }} Eventio. Powered by <a href="https://q4iltd.com" target="_blank" class="font-bold text-brand-600 hover:underline">Q4I</a>
             </div>
             <div class="flex items-center justify-center space-x-4">
+                <a href="{{ route('changelog') }}" class="hover:text-brand-600 transition">Changelog</a>
+                <span class="text-slate-300">|</span>
                 <a href="{{ route('terms') }}" class="hover:text-brand-600 transition">Terms & Conditions</a>
                 <span class="text-slate-300">|</span>
                 <a href="{{ route('privacy') }}" class="text-brand-600 font-bold hover:underline transition">Privacy Policy</a>

@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'is_admin' => \App\Http\Middleware\IsAdmin::class,
             'event.subscription' => \App\Http\Middleware\CheckEventSubscription::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckSuspended::class,
+        ]);
         $middleware->validateCsrfTokens(except: [
             'api/realtime/verify',
             'api/guest/*/check-in',

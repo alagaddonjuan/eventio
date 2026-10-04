@@ -15,6 +15,11 @@ class GuestController extends Controller
     public function rsvp($eventToken)
     {
         $event = Event::where('tracking_access_token', $eventToken)->firstOrFail();
+        
+        if ($event->is_suspended) {
+            abort(404, 'This event is currently unavailable.');
+        }
+        
         return view('guest.rsvp', compact('event'));
     }
 
@@ -24,6 +29,10 @@ class GuestController extends Controller
     public function storeGuest(Request $request, $eventToken)
     {
         $event = Event::where('tracking_access_token', $eventToken)->firstOrFail();
+        
+        if ($event->is_suspended) {
+            abort(404, 'This event is currently unavailable.');
+        }
 
         $rules = [
             'quantity' => 'required|integer|min:1|max:10',
@@ -103,6 +112,18 @@ class GuestController extends Controller
             }
         }
         
+        // Promoter tracking for free tickets (or declined RSVPs if we wanted, but let's stick to all RSVPs)
+        $promoterCode = session('promoter_code');
+        if ($promoterCode && $event->affiliateProgram && $event->affiliateProgram->is_active) {
+            $promoterLink = \App\Models\PromoterLink::where('unique_code', $promoterCode)
+                ->where('event_id', $event->id)
+                ->first();
+                
+            if ($promoterLink) {
+                $promoterLink->increment('sales_count', $qty);
+            }
+        }
+        
         // Notify host for every 10th guest across the whole event
         $totalGuests = $event->guests()->count();
         if ($totalGuests > 0 && $totalGuests % 10 === 0) {
@@ -124,6 +145,10 @@ class GuestController extends Controller
     {
         $guest = Guest::with('event')->where('unique_token', $token)->firstOrFail();
         $event = $guest->event;
+
+        if ($event->is_suspended) {
+            abort(404, 'This event is currently unavailable.');
+        }
 
         $now = now();
         $eventDate = $event->event_date;

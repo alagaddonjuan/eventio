@@ -77,6 +77,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                                             <a href="{{ route('events.edit', $event) }}" class="text-amber-600 hover:text-amber-900">Edit</a>
                                             <a href="{{ route('tickets.index', $event) }}" class="text-emerald-600 hover:text-emerald-900 font-semibold">Manage Tickets</a>
+                                            <a href="{{ route('affiliates.manage', $event) }}" class="text-fuchsia-600 hover:text-fuchsia-900">Affiliate Program</a>
                                             <a href="{{ route('events.command-center', $event) }}" class="text-indigo-600 hover:text-indigo-900">Command Center</a>
                                             <button onclick="copyLink('{{ route('guest.rsvp', $event->tracking_access_token) }}')" class="text-blue-600 hover:text-blue-900">Copy Link</button>
                                             <form action="{{ route('events.destroy', $event) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this event?');">

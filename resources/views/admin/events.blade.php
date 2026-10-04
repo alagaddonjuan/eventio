@@ -60,7 +60,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-slate-400">
                                         {{ \Carbon\Carbon::parse($event->event_date)->format('M j, Y g:i A') }}
                                     </td>
-                                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <td class="px-6 py-4 text-right whitespace-nowrap space-x-2">
+                                        <form action="{{ route('admin.events.suspend', $event) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to {{ $event->is_suspended ? 'unsuspend' : 'suspend' }} this event?');">
+                                            @csrf
+                                            <button type="submit" class="{{ $event->is_suspended ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20' : 'text-orange-400 hover:text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20' }} px-3 py-1.5 rounded border transition-colors">
+                                                {{ $event->is_suspended ? 'Unsuspend' : 'Suspend' }}
+                                            </button>
+                                        </form>
+                                        
                                         <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this event? This action cannot be undone.');">
                                             @csrf
                                             @method('DELETE')

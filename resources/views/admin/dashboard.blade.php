@@ -14,6 +14,10 @@
                 <a href="{{ route('admin.users') }}" class="text-indigo-400 hover:text-white transition font-medium">Users</a>
                 <span class="text-slate-600">|</span>
                 <a href="{{ route('admin.events') }}" class="text-indigo-400 hover:text-white transition font-medium">Events</a>
+                <span class="text-slate-600">|</span>
+                <a href="{{ route('admin.withdrawals.index') }}" class="text-indigo-400 hover:text-white transition font-medium">Payouts</a>
+                <span class="text-slate-600">|</span>
+                <a href="{{ route('admin.transactions') }}" class="text-indigo-400 hover:text-white transition font-medium">Transactions</a>
             </div>
         </div>
     </x-slot>
@@ -56,6 +60,29 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 Enable Premium
                             @endif
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Platform Fee Setting -->
+            <div class="relative overflow-hidden bg-slate-900 rounded-2xl border border-slate-800 mb-8 p-6 shadow-2xl">
+                <div class="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl"></div>
+                <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            Platform Fee Percentage
+                        </h3>
+                        <p class="text-sm text-slate-400 mt-1">Set the dynamic percentage fee taken from paid events.</p>
+                    </div>
+                    <form action="{{ route('admin.update-fee') }}" method="POST" class="flex items-center gap-3 w-full md:w-auto">
+                        @csrf
+                        <div class="relative">
+                            <input type="number" step="0.01" min="0" max="100" name="platform_fee_percent" id="platform_fee_percent" value="{{ old('platform_fee_percent', $platformFeePercent) }}" required class="block w-full md:w-32 rounded-xl bg-slate-950 border-slate-700 text-white placeholder-slate-400 focus:border-amber-500 focus:ring-amber-500/20 shadow-inner px-4 py-3 pl-8" />
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">%</span>
+                        </div>
+                        <button type="submit" class="px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg bg-amber-500/10 text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-white hover:shadow-amber-500/20">
+                            Save Fee
                         </button>
                     </form>
                 </div>

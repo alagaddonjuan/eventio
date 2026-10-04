@@ -6,6 +6,8 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\RealtimeAuthController;
 use App\Http\Controllers\ProfileController;
 
+Route::get('/discover', [\App\Http\Controllers\EventDiscoveryController::class, 'index'])->name('discovery.index');
+
 Route::get('/', function () {
     $upcomingEvents = \App\Models\Event::with('tickets')
         ->where('event_date', '>=', now())
@@ -28,6 +30,10 @@ Route::get('/terms', function () {
 Route::get('/privacy', function () {
     return view('legal.privacy');
 })->name('privacy');
+
+Route::get('/changelog', function () {
+    return view('changelog');
+})->name('changelog');
 
 // Google Socialite Routes
 Route::get('/auth/google', [\App\Http\Controllers\Auth\SocialiteController::class, 'redirectToGoogle'])->name('auth.google');
@@ -67,20 +73,51 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/bank', [ProfileController::class, 'updateBank'])->name('profile.bank');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Host Withdrawals
+    Route::get('/withdrawals', [\App\Http\Controllers\WithdrawalController::class, 'index'])->name('withdrawals.index');
+    Route::post('/withdrawals', [\App\Http\Controllers\WithdrawalController::class, 'store'])->name('withdrawals.store');
+
+    // Marketplace
+    Route::get('/marketplace', [\App\Http\Controllers\MarketplaceController::class, 'index'])->name('marketplace.index');
+    Route::get('/marketplace/{vendorProfile}', [\App\Http\Controllers\MarketplaceController::class, 'show'])->name('marketplace.show');
+    Route::post('/marketplace/{vendorProfile}/book', [\App\Http\Controllers\MarketplaceController::class, 'book'])->name('marketplace.book');
+    Route::get('/marketplace/vendor/profile', [\App\Http\Controllers\MarketplaceController::class, 'myProfile'])->name('marketplace.profile');
+    Route::post('/marketplace/vendor/profile', [\App\Http\Controllers\MarketplaceController::class, 'updateProfile'])->name('marketplace.update-profile');
+    // Affiliate Program (Host)
+    Route::get('/events/{event}/affiliate', [\App\Http\Controllers\AffiliateController::class, 'manage'])->name('affiliates.manage');
+    Route::post('/events/{event}/affiliate', [\App\Http\Controllers\AffiliateController::class, 'update'])->name('affiliates.update');
+
+    // Promoter Dashboard
+    Route::get('/promoter', [\App\Http\Controllers\PromoterController::class, 'index'])->name('promoter.dashboard');
+    Route::post('/promoter/join/{event}', [\App\Http\Controllers\PromoterController::class, 'join'])->name('promoter.join');
 });
 
+// Promoter Tracking Route
+Route::get('/ref/{code}', [\App\Http\Controllers\PromoterController::class, 'track'])->name('promoter.track');
 // Master Admin Routes
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
     Route::post('/toggle-premium', [\App\Http\Controllers\AdminController::class, 'togglePremium'])->name('toggle-premium');
+    Route::post('/update-fee', [\App\Http\Controllers\AdminController::class, 'updatePlatformFee'])->name('update-fee');
     
     // User management
     Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
     Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'destroyUser'])->name('users.destroy');
+    Route::post('/users/{user}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');
+    Route::post('/users/{user}/impersonate', [\App\Http\Controllers\AdminController::class, 'impersonateUser'])->name('users.impersonate');
     
     // Event management
     Route::get('/events', [\App\Http\Controllers\AdminController::class, 'events'])->name('events');
     Route::delete('/events/{event}', [\App\Http\Controllers\AdminController::class, 'destroyEvent'])->name('events.destroy');
+    Route::post('/events/{event}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendEvent'])->name('events.suspend');
+
+    // Withdrawals
+    Route::get('/withdrawals', [\App\Http\Controllers\WithdrawalController::class, 'adminIndex'])->name('withdrawals.index');
+    Route::post('/withdrawals/{withdrawal}/status', [\App\Http\Controllers\WithdrawalController::class, 'updateStatus'])->name('withdrawals.update-status');
+
+    // Transactions
+    Route::get('/transactions', [\App\Http\Controllers\AdminController::class, 'transactions'])->name('transactions');
 });
 
 // Guest portal (no login required)

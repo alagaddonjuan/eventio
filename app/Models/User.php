@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'google_id',
+        'is_suspended',
     ];
 
     /**
@@ -59,5 +60,31 @@ class User extends Authenticatable
     public function bankAccount()
     {
         return $this->hasOne(BankAccount::class);
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
+
+    public function availableBalance()
+    {
+        $totalEarned = \App\Models\Payment::whereHas('event', function($query) {
+            $query->where('user_id', $this->id);
+        })->where('status', 'successful')->sum('host_payout');
+
+        $totalWithdrawnOrPending = $this->withdrawals()->whereIn('status', ['pending', 'approved', 'processing'])->sum('amount');
+
+        return max(0, $totalEarned - $totalWithdrawnOrPending);
+    }
+
+    public function vendorProfile()
+    {
+        return $this->hasOne(VendorProfile::class);
+    }
+
+    public function promoterLinks()
+    {
+        return $this->hasMany(PromoterLink::class);
     }
 }

@@ -25,6 +25,7 @@ class Event extends Model
         'mux_playback_id',
         'simulcast_targets',
         'banner_image',
+        'is_suspended',
     ];
 
     protected $casts = [
@@ -73,5 +74,20 @@ class Event extends Model
     public function supportTickets()
     {
         return $this->hasMany(SupportTicket::class);
+    }
+
+    public function vendorBookings()
+    {
+        return $this->hasMany(VendorBooking::class);
+    }
+
+    public function affiliateProgram()
+    {
+        return $this->hasOne(AffiliateProgram::class);
+    }
+
+    public function promoterLinks()
+    {
+        return $this->hasMany(PromoterLink::class);
     }
 }

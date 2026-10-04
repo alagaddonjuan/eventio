@@ -49,7 +49,8 @@ class RsvpService
         }
         
         $amountPerGuest = $totalAmount / $qty;
-        $platformFeePercent = floatval(config('services.platform.fee_percent', env('PLATFORM_FEE_PERCENT', 5)));
+        $setting = \App\Models\Setting::where('key', 'platform_fee_percent')->first();
+        $platformFeePercent = $setting ? floatval($setting->value) : 5;
         $platformFeePerGuest = $amountPerGuest * ($platformFeePercent / 100);
         $hostPayoutPerGuest = $amountPerGuest - $platformFeePerGuest;
         
@@ -70,7 +71,7 @@ class RsvpService
                     'barcode_data' => $uniqueToken,
                 ]);
                 
-                Payment::create([
+                $payment = Payment::create([
                     'event_id' => $event->id,
                     'guest_id' => $guest->id,
                     'ticket_id' => $ticket->id,
@@ -80,6 +81,28 @@ class RsvpService
                     'host_payout' => $hostPayoutPerGuest,
                     'status' => 'successful',
                 ]);
+                
+                // Promoter tracking
+                $promoterCode = session('promoter_code');
+                if ($promoterCode && $event->affiliateProgram && $event->affiliateProgram->is_active) {
+                    $promoterLink = \App\Models\PromoterLink::where('unique_code', $promoterCode)
+                        ->where('event_id', $event->id)
+                        ->first();
+                        
+                    if ($promoterLink) {
+                        $commissionAmount = $amountPerGuest * ($event->affiliateProgram->commission_percentage / 100);
+                        
+                        // Deduct commission from host payout
+                        $payment->update([
+                            'promoter_link_id' => $promoterLink->id,
+                            'promoter_commission' => $commissionAmount,
+                            'host_payout' => $hostPayoutPerGuest - $commissionAmount,
+                        ]);
+                        
+                        $promoterLink->increment('sales_count');
+                        $promoterLink->increment('earnings', $commissionAmount);
+                    }
+                }
                 
                 Mail::to($guest->email)->queue(new GuestRsvpConfirmationEmail($guest));
             }

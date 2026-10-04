@@ -69,7 +69,22 @@
                                         {{ $user->created_at->format('M j, Y') }}
                                         <div class="text-xs text-slate-500">{{ $user->created_at->diffForHumans() }}</div>
                                     </td>
-                                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <td class="px-6 py-4 text-right whitespace-nowrap space-x-2">
+                                        @if($user->id !== auth()->id())
+                                            <form action="{{ route('admin.users.impersonate', $user) }}" method="POST" class="inline-block">
+                                                @csrf
+                                                <button type="submit" class="text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded border border-indigo-500/20 transition-colors">
+                                                    Impersonate
+                                                </button>
+                                            </form>
+                                            
+                                            <form action="{{ route('admin.users.suspend', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to {{ $user->is_suspended ? 'unsuspend' : 'suspend' }} this user?');">
+                                                @csrf
+                                                <button type="submit" class="{{ $user->is_suspended ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20' : 'text-orange-400 hover:text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20' }} px-3 py-1.5 rounded border transition-colors">
+                                                    {{ $user->is_suspended ? 'Unsuspend' : 'Suspend' }}
+                                                </button>
+                                            </form>
+                                        @endif
                                         <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone and will delete all their events.');">
                                             @csrf
                                             @method('DELETE')

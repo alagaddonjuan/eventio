@@ -230,6 +230,20 @@
         });
     </script>
     
+    @if($event->affiliateProgram && $event->affiliateProgram->is_active)
+        <div class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.1)] p-6 w-full max-w-md mx-auto relative overflow-hidden border border-white mt-6 text-center">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Promote & Earn!</h3>
+            <p class="text-sm text-slate-500 mb-4">Earn a {{ $event->affiliateProgram->commission_percentage }}% commission on every ticket sold through your unique link.</p>
+            
+            <form action="{{ route('promoter.join', $event) }}" method="POST">
+                @csrf
+                <button type="submit" class="w-full text-indigo-600 border-2 border-indigo-600 font-bold text-sm py-2 px-4 rounded-xl hover:bg-indigo-50 transition-colors">
+                    Become a Promoter
+                </button>
+            </form>
+        </div>
+    @endif
+    
     <div class="mt-8 text-center text-xs font-medium" style="color: {{ $event->theme_color ?? '#0ea5e9' }}90;">
         &copy; {{ date('Y') }} {{ config('app.name', 'Eventio') }}. Powered by <a href="https://q4iltd.com" target="_blank" class="font-bold hover:underline">Q4I</a><br>
         <div class="mt-2 flex items-center justify-center space-x-3">

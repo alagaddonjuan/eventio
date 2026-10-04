@@ -36,8 +36,10 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     @auth
+                        <a href="{{ route('discovery.index') }}" class="text-slate-600 hover:text-brand-600 font-semibold transition">Explore Events</a>
                         <a href="{{ route('dashboard') }}" class="text-slate-600 hover:text-brand-600 font-semibold transition">Dashboard</a>
                     @else
+                        <a href="{{ route('discovery.index') }}" class="text-slate-600 hover:text-brand-600 font-semibold transition">Explore Events</a>
                         <a href="{{ route('login') }}" class="text-slate-600 hover:text-brand-600 font-semibold transition">Log in</a>
                         <a href="{{ route('register') }}" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm transition">Register</a>
                     @endauth
@@ -293,6 +295,8 @@
                 &copy; {{ date('Y') }} Eventio. Powered by <a href="https://q4iltd.com" target="_blank" class="font-bold text-brand-600 hover:underline">Q4I</a>
             </div>
             <div class="flex items-center justify-center space-x-4">
+                <a href="{{ route('changelog') }}" class="hover:text-brand-600 transition">Changelog</a>
+                <span class="text-slate-300">|</span>
                 <a href="{{ route('terms') }}" class="hover:text-brand-600 transition">Terms & Conditions</a>
                 <span class="text-slate-300">|</span>
                 <a href="{{ route('privacy') }}" class="hover:text-brand-600 transition">Privacy Policy</a>

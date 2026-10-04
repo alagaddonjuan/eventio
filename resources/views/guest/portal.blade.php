@@ -144,6 +144,18 @@
                     </button>
                     <p id="upload-status" class="text-xs text-brand-600 mt-2 hidden font-semibold"></p>
                 </div>
+
+                <!-- Guest Gallery Display -->
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-slate-700">Recent Uploads</h4>
+                        <button onclick="fetchGuestGallery()" class="text-xs font-semibold hover:underline" style="color: {{ $guest->event->theme_color ?? '#0ea5e9' }}">Refresh</button>
+                    </div>
+                    <div id="guest-gallery-grid" class="grid grid-cols-3 gap-2">
+                        <!-- Loaded via JS -->
+                        <div class="col-span-3 text-center text-xs text-slate-400 py-4">Loading gallery...</div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -299,6 +311,39 @@
             setTimeout(() => {
                 statusEl.classList.add('hidden');
             }, 5000);
+        });
+
+        // Guest Gallery Logic
+        function fetchGuestGallery() {
+            const grid = document.getElementById('guest-gallery-grid');
+            if(!grid) return;
+
+            fetch(`/api/events/${window.EVENT_CONFIG.eventToken}/gallery`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        grid.innerHTML = '';
+                        if (data.data.length === 0) {
+                            grid.innerHTML = '<div class="col-span-3 text-center text-xs text-slate-400 py-4">No photos yet. Be the first!</div>';
+                        } else {
+                            data.data.forEach(media => {
+                                grid.innerHTML += `
+                                    <a href="${media.media_url}" target="_blank" class="block rounded-lg overflow-hidden bg-slate-200 aspect-square border border-slate-200 shadow-sm hover:shadow-md transition">
+                                        <img src="${media.media_url}" class="w-full h-full object-cover">
+                                    </a>
+                                `;
+                            });
+                        }
+                    }
+                })
+                .catch(err => {
+                    grid.innerHTML = '<div class="col-span-3 text-center text-xs text-red-400 py-4">Failed to load gallery.</div>';
+                });
+        }
+
+        // Load gallery on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchGuestGallery();
         });
     </script>
 </body>
