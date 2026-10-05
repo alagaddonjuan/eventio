@@ -91,81 +91,135 @@
                 </div>
             @endif
 
-            <form action="{{ route('guest.store', $event->tracking_access_token) }}" method="POST">
-                @csrf
-                <div class="mb-5">
-                    <label for="quantity" class="block text-sm font-semibold text-slate-700 mb-2">How many people are attending?</label>
-                    <select id="quantity" name="quantity" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">
-                        @for($i = 1; $i <= 10; $i++)
-                            <option value="{{ $i }}">{{ $i }} {{ $i == 1 ? 'Person' : 'People' }}</option>
-                        @endfor
-                    </select>
-                </div>
-
-                <div id="guests-container">
-                    <div class="guest-entry mb-5 p-4 border border-slate-100 rounded-xl bg-white shadow-sm">
-                        <h3 class="font-bold text-sm text-slate-800 mb-3 guest-title">Guest 1 (Primary Contact)</h3>
-                        <div class="mb-3">
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">Name</label>
-                            <input type="text" name="names[]" value="{{ old('names.0') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="e.g. John Doe">
+            @if($isSoldOut)
+                @if($event->allow_waitlist)
+                    <div class="text-center mb-6">
+                        <span class="inline-block bg-orange-100 text-orange-700 font-bold px-3 py-1 rounded-full text-sm mb-3">Sold Out</span>
+                        <h2 class="text-xl font-bold text-slate-800 mb-2">Join the Waitlist</h2>
+                        <p class="text-slate-500 text-sm">Tickets are currently sold out. Join the waitlist and we'll notify you if a spot opens up!</p>
+                    </div>
+                    
+                    <form action="{{ route('guest.waitlist', $event->tracking_access_token) }}" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+                            <input type="text" name="name" value="{{ old('name') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="e.g. John Doe">
                         </div>
-                        <div>
+                        <div class="mb-6">
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
-                            <input type="email" name="emails[]" value="{{ old('emails.0') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="john@example.com">
+                            <input type="email" name="email" value="{{ old('email') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="john@example.com">
+                        </div>
+                        <button type="submit" class="w-full text-white font-bold text-lg py-4 px-6 rounded-2xl bg-orange-500 hover:bg-orange-600 shadow-[0_10px_25px_-5px_rgba(249,115,22,0.5)] transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                            Join Waitlist
+                        </button>
+                    </form>
+                @else
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">Sold Out</h2>
+                        <p class="text-slate-500">Unfortunately, this event has reached its maximum capacity.</p>
+                    </div>
+                @endif
+            @else
+                <form action="{{ route('guest.store', $event->tracking_access_token) }}" method="POST">
+                    @csrf
+                    <div class="mb-5">
+                        <label for="quantity" class="block text-sm font-semibold text-slate-700 mb-2">How many people are attending?</label>
+                        <select id="quantity" name="quantity" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">
+                            @for($i = 1; $i <= 10; $i++)
+                                <option value="{{ $i }}">{{ $i }} {{ $i == 1 ? 'Person' : 'People' }}</option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    <div id="guests-container">
+                        <div class="guest-entry mb-5 p-4 border border-slate-100 rounded-xl bg-white shadow-sm">
+                            <h3 class="font-bold text-sm text-slate-800 mb-3 guest-title">Guest 1 (Primary Contact)</h3>
+                            <div class="mb-3">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Name</label>
+                                <input type="text" name="names[]" value="{{ old('names.0') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="e.g. John Doe">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+                                <input type="email" name="emails[]" value="{{ old('emails.0') }}" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="john@example.com">
+                            </div>
+                            
+                            @if($customQuestions && $customQuestions->count() > 0)
+                                <div class="mt-4 pt-4 border-t border-slate-100">
+                                    @foreach($customQuestions as $question)
+                                        <div class="mb-3">
+                                            <label class="block text-sm font-semibold text-slate-700 mb-1">{{ $question->question_text }}{{ $question->is_required ? ' *' : '' }}</label>
+                                            @if($question->question_type === 'select' && $question->options)
+                                                <select name="answers[0][{{ $question->id }}]" {{ $question->is_required ? 'required' : '' }} class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">
+                                                    <option value="">Select an option</option>
+                                                    @foreach($question->options as $option)
+                                                        <option value="{{ $option }}">{{ $option }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @else
+                                                <input type="text" name="answers[0][{{ $question->id }}]" {{ $question->is_required ? 'required' : '' }} class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     </div>
-                </div>
 
-                <div class="mb-8">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Are you attending?</label>
-                    <div class="flex gap-4">
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="rsvp_status" value="attending" class="peer sr-only" required>
-                            <div class="text-center py-3 px-4 rounded-xl border border-slate-200 peer-checked:border-theme peer-checked:bg-theme/10 peer-checked:text-theme font-semibold transition-all">
-                                Yes, I'll be there
-                            </div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="rsvp_status" value="declined" class="peer sr-only" required>
-                            <div class="text-center py-3 px-4 rounded-xl border border-slate-200 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition-all">
-                                No, I can't make it
-                            </div>
-                        </label>
-                </div>
-
-                @if($event->tickets->count() > 0)
-                <div class="mb-8" id="ticketSelectionContainer">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Select a Ticket</label>
-                    <div class="space-y-3">
-                        @foreach($event->tickets as $ticket)
-                        <label class="flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition peer-checked:border-theme peer-checked:bg-theme/5">
-                            <input type="radio" name="ticket_id" value="{{ $ticket->id }}" class="mr-3 h-4 w-4 text-theme focus:ring-theme" required>
-                            <div class="flex-1 flex justify-between items-center">
-                                <span class="font-bold text-slate-800">{{ $ticket->name }}</span>
-                                <span class="font-semibold text-sm {{ $ticket->type === 'free' ? 'text-green-600' : 'text-slate-600' }}">
-                                    @if($ticket->type === 'free')
-                                        Free
-                                    @else
-                                        ₦{{ number_format($ticket->price, 2) }}
-                                    @endif
-                                </span>
-                            </div>
-                        </label>
-                        @endforeach
+                    <div class="mb-8">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Are you attending?</label>
+                        <div class="flex gap-4">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="rsvp_status" value="attending" class="peer sr-only" required>
+                                <div class="text-center py-3 px-4 rounded-xl border border-slate-200 peer-checked:border-theme peer-checked:bg-theme/10 peer-checked:text-theme font-semibold transition-all">
+                                    Yes, I'll be there
+                                </div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="rsvp_status" value="declined" class="peer sr-only" required>
+                                <div class="text-center py-3 px-4 rounded-xl border border-slate-200 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-semibold transition-all">
+                                    No, I can't make it
+                                </div>
+                            </label>
+                        </div>
                     </div>
-                </div>
-                @endif
 
-                <div class="mb-8">
-                    @if(config('services.recaptcha.site_key'))
-                        <div class="g-recaptcha flex justify-center" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                    @if($event->tickets->count() > 0)
+                    <div class="mb-8" id="ticketSelectionContainer">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Select a Ticket</label>
+                        <div class="space-y-3">
+                            @foreach($event->tickets as $ticket)
+                            <label class="flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition peer-checked:border-theme peer-checked:bg-theme/5">
+                                <input type="radio" name="ticket_id" value="{{ $ticket->id }}" class="mr-3 h-4 w-4 text-theme focus:ring-theme" required>
+                                <div class="flex-1 flex justify-between items-center">
+                                    <span class="font-bold text-slate-800">{{ $ticket->name }}</span>
+                                    <span class="font-semibold text-sm {{ $ticket->type === 'free' ? 'text-green-600' : 'text-slate-600' }}">
+                                        @if($ticket->type === 'free')
+                                            Free
+                                        @else
+                                            ₦{{ number_format($ticket->price, 2) }}
+                                        @endif
+                                    </span>
+                                </div>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
                     @endif
-                </div>
 
-                <button type="submit" class="w-full text-white font-bold text-lg py-4 px-6 rounded-2xl btn-theme transition-transform hover:scale-[1.02] active:scale-[0.98]">
-                    Send RSVP
-                </button>
-            </form>
+                    <div class="mb-8">
+                        @if(config('services.recaptcha.site_key'))
+                            <div class="g-recaptcha flex justify-center" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                        @endif
+                    </div>
+
+                    <button type="submit" class="w-full text-white font-bold text-lg py-4 px-6 rounded-2xl btn-theme transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                        Send RSVP
+                    </button>
+                </form>
+            @endif
         @endif
     </div>
 
@@ -199,6 +253,32 @@
         });
 
         // Handle quantity change
+        const customQuestions = @json($customQuestions ?? []);
+        
+        function generateCustomQuestionsHtml(guestIndex) {
+            if (!customQuestions || customQuestions.length === 0) return '';
+            
+            let html = '<div class="mt-4 pt-4 border-t border-slate-100">';
+            customQuestions.forEach(q => {
+                html += `<div class="mb-3">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">${q.question_text}${q.is_required ? ' *' : ''}</label>`;
+                
+                if (q.question_type === 'select' && q.options) {
+                    html += `<select name="answers[${guestIndex}][${q.id}]" ${q.is_required ? 'required' : ''} class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">
+                        <option value="">Select an option</option>`;
+                    q.options.forEach(opt => {
+                        html += `<option value="${opt}">${opt}</option>`;
+                    });
+                    html += `</select>`;
+                } else {
+                    html += `<input type="text" name="answers[${guestIndex}][${q.id}]" ${q.is_required ? 'required' : ''} class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50">`;
+                }
+                html += `</div>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
         document.getElementById('quantity').addEventListener('change', function(e) {
             const qty = parseInt(e.target.value);
             const container = document.getElementById('guests-container');
@@ -207,6 +287,9 @@
             if (qty > currentCount) {
                 // Add more guests
                 for (let i = currentCount + 1; i <= qty; i++) {
+                    const guestIndex = i - 1;
+                    const questionsHtml = generateCustomQuestionsHtml(guestIndex);
+                    
                     const guestHtml = `
                     <div class="guest-entry mb-5 p-4 border border-slate-100 rounded-xl bg-white shadow-sm" id="guest-${i}">
                         <h3 class="font-bold text-sm text-slate-800 mb-3 guest-title">Guest ${i}</h3>
@@ -218,6 +301,7 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
                             <input type="email" name="emails[]" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-colors text-slate-900 bg-slate-50" placeholder="guest${i}@example.com">
                         </div>
+                        ${questionsHtml}
                     </div>`;
                     container.insertAdjacentHTML('beforeend', guestHtml);
                 }

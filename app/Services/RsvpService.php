@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\Guest;
+use App\Models\GuestAnswer;
 use App\Models\Payment;
 use App\Models\PromoCode;
 use Illuminate\Support\Str;
@@ -70,6 +71,18 @@ class RsvpService
                     'ticket_id' => $pendingRsvp['ticket_id'],
                     'barcode_data' => $uniqueToken,
                 ]);
+
+                if (isset($pendingRsvp['answers'][$i]) && is_array($pendingRsvp['answers'][$i])) {
+                    foreach ($pendingRsvp['answers'][$i] as $questionId => $answerText) {
+                        if (!empty($answerText)) {
+                            GuestAnswer::create([
+                                'guest_id' => $guest->id,
+                                'custom_question_id' => $questionId,
+                                'answer_text' => is_array($answerText) ? json_encode($answerText) : $answerText,
+                            ]);
+                        }
+                    }
+                }
                 
                 $payment = Payment::create([
                     'event_id' => $event->id,

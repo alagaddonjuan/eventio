@@ -14,6 +14,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Mux Player -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@mux/mux-player"></script>
+    <!-- Vanilla Tilt for Holographic Ticket -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -93,15 +95,69 @@
             @if($guest->ticket)
             <div class="mb-8 border-t border-dashed border-slate-300 pt-6 text-center">
                 <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Your Ticket</h3>
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mx-auto inline-block text-left relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-2 h-full" style="background-color: {{ $guest->event->theme_color ?? '#0ea5e9' }}"></div>
-                    <div class="pl-4">
-                        <div class="text-lg font-bold text-slate-900">{{ $guest->ticket->name }}</div>
-                        <div class="text-xs text-slate-500 uppercase">{{ $guest->ticket->type }}</div>
-                        <div class="mt-4 flex justify-center bg-white p-2 rounded">
-                            {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(150)->generate(route('guest.verify', $guest->unique_token)) !!}
+                
+                <!-- 3D Holographic Ticket -->
+                <div class="ticket-card mx-auto inline-block relative w-[300px] h-[450px] rounded-2xl overflow-hidden cursor-pointer" data-tilt data-tilt-glare data-tilt-max-glare="0.8" data-tilt-max="15" data-tilt-speed="400" data-tilt-perspective="500" style="transform-style: preserve-3d;">
+                    <div class="absolute inset-0 bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col justify-between" style="transform: translateZ(20px);">
+                        <!-- Theme color header -->
+                        <div class="h-24 w-full flex items-center justify-center p-4 text-white relative overflow-hidden" style="background: linear-gradient(135deg, {{ $guest->event->theme_color ?? '#0ea5e9' }}, {{ $guest->event->theme_color ?? '#0ea5e9' }}99);">
+                            <!-- Holographic overlay -->
+                            <div class="absolute inset-0 bg-gradient-to-tr from-white/10 via-white/50 to-white/10 mix-blend-overlay"></div>
+                            <h2 class="text-xl font-bold tracking-tight text-center z-10">{{ $guest->event->title }}</h2>
                         </div>
-                        <div class="text-[10px] text-center text-slate-400 mt-1 font-mono tracking-widest">{{ substr($guest->barcode_data ?? $guest->unique_token, 0, 12) }}...</div>
+                        
+                        <!-- Ticket Details -->
+                        <div class="px-6 py-4 flex-1 flex flex-col justify-between" style="transform: translateZ(40px);">
+                            <div>
+                                <div class="text-2xl font-black text-slate-900 leading-none">{{ $guest->name }}</div>
+                                <div class="text-sm font-bold mt-1 uppercase" style="color: {{ $guest->event->theme_color ?? '#0ea5e9' }};">{{ $guest->ticket->name }} - {{ $guest->ticket->type }}</div>
+                            </div>
+                            
+                            <div class="my-4 flex justify-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(160)->generate(route('guest.verify', $guest->unique_token)) !!}
+                            </div>
+                            
+                            <div class="text-center">
+                                <div class="text-[11px] text-slate-400 font-mono tracking-[0.2em]">{{ substr($guest->barcode_data ?? $guest->unique_token, 0, 16) }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Ticket tear line -->
+                        <div class="flex items-center w-full relative h-4">
+                            <div class="w-4 h-4 rounded-full bg-slate-50 absolute -left-2 -top-2"></div>
+                            <div class="w-full border-t-2 border-dashed border-slate-200"></div>
+                            <div class="w-4 h-4 rounded-full bg-slate-50 absolute -right-2 -top-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet & Calendar Actions -->
+                <div class="mt-6 flex flex-col gap-3 max-w-[300px] mx-auto">
+                    <!-- Apple Wallet -->
+                    <a href="{{ route('guest.wallet', $guest->unique_token) }}" class="flex items-center justify-center gap-2 bg-black text-white py-3 px-4 rounded-xl font-medium transition hover:bg-gray-800">
+                        <svg class="w-5 h-5" viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.3 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.3zM34.4 43.4c2.8-22.1 19.3-51.5 45.4-51.5 24.5 0 42.4 17.8 45.3 52.8-2.9 22.3-21.3 50.8-46.7 50.8-25.1 0-46.7-18-44-52.1z"/></svg>
+                        Add to Apple Wallet
+                    </a>
+                    
+                    <!-- Google Wallet -->
+                    <a href="{{ route('guest.google-wallet', $guest->unique_token) }}" class="flex items-center justify-center gap-2 bg-slate-100 border border-slate-200 text-slate-700 py-3 px-4 rounded-xl font-medium transition hover:bg-slate-200">
+                        <svg class="w-5 h-5 text-[#4285F4]" viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/></svg>
+                        Add to Google Wallet
+                    </a>
+
+                    <!-- Calendar -->
+                    @php
+                        $startDate = $guest->event->event_date->format('Ymd\THis\Z');
+                        $endDate = $guest->event->event_date->addHours(3)->format('Ymd\THis\Z');
+                        $googleCalendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" . urlencode($guest->event->title) . "&dates={$startDate}/{$endDate}&details=" . urlencode("Access your digital ticket here: " . route('guest.portal', $guest->unique_token)) . "&location=" . urlencode($guest->event->venue_name);
+                    @endphp
+                    <div class="flex gap-2">
+                        <a href="{{ $googleCalendarUrl }}" target="_blank" class="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 border border-blue-100 py-2.5 px-3 rounded-xl font-medium text-sm transition hover:bg-blue-100">
+                            Google Cal
+                        </a>
+                        <a href="{{ route('guest.ics', $guest->unique_token) }}" class="flex-1 flex items-center justify-center gap-2 bg-slate-50 text-slate-600 border border-slate-200 py-2.5 px-3 rounded-xl font-medium text-sm transition hover:bg-slate-100">
+                            Download .ics
+                        </a>
                     </div>
                 </div>
             </div>
@@ -118,6 +174,26 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                 <span>Message Host</span>
             </a>
+
+            <!-- See Who's Going (Social Features) -->
+            @if(isset($otherGuests) && $otherGuests->count() > 0)
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center justify-between">
+                    See Who's Going
+                    <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">{{ $guest->event->guests()->where('rsvp_status', 'attending')->count() }} Attending</span>
+                </h3>
+                <div class="flex flex-wrap gap-3 mt-4">
+                    @foreach($otherGuests as $otherGuest)
+                    <div class="flex flex-col items-center group cursor-pointer">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center text-lg font-bold text-slate-600 transition-transform group-hover:scale-110" style="color: {{ $guest->event->theme_color ?? '#0ea5e9' }}; border-color: {{ $guest->event->theme_color ?? '#0ea5e9' }}20">
+                            {{ strtoupper(substr($otherGuest->name, 0, 1)) }}
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-600 mt-1 max-w-[60px] truncate text-center">{{ explode(' ', $otherGuest->name)[0] }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
 
             <!-- Event Media Section -->
             <div class="mt-6 pt-6 border-t border-slate-200">
@@ -152,8 +228,10 @@
                         <button onclick="fetchGuestGallery()" class="text-xs font-semibold hover:underline" style="color: {{ $guest->event->theme_color ?? '#0ea5e9' }}">Refresh</button>
                     </div>
                     <div id="guest-gallery-grid" class="grid grid-cols-3 gap-2">
-                        <!-- Loaded via JS -->
-                        <div class="col-span-3 text-center text-xs text-slate-400 py-4">Loading gallery...</div>
+                        <!-- Skeleton Loaders -->
+                        @for($i = 0; $i < 6; $i++)
+                        <div class="gallery-skeleton bg-slate-200 aspect-square rounded-lg animate-pulse w-full"></div>
+                        @endfor
                     </div>
                 </div>
             </div>
@@ -322,7 +400,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        grid.innerHTML = '';
+                        grid.innerHTML = ''; // Clear skeletons
                         if (data.data.length === 0) {
                             grid.innerHTML = '<div class="col-span-3 text-center text-xs text-slate-400 py-4">No photos yet. Be the first!</div>';
                         } else {

@@ -87,4 +87,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(PromoterLink::class);
     }
+
+    public function cohostedEvents()
+    {
+        return $this->hasMany(EventCohost::class);
+    }
 }

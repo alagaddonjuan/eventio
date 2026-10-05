@@ -9,6 +9,9 @@
                 <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-stream" onclick="switchTab('stream')">Stream</button>
                 <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-gallery" onclick="switchTab('gallery')">Gallery</button>
                 <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-blast" onclick="switchTab('blast')">Email</button>
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-analytics" onclick="switchTab('analytics')">Analytics</button>
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-registration" onclick="switchTab('registration')">Registration</button>
+                <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-team" onclick="switchTab('team')">Team</button>
                 @if($event->payment_status === 'paid')
                 <button class="py-1.5 px-4 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-lg transition" id="tab-promo" onclick="switchTab('promo')">Promos</button>
                 @endif
@@ -58,10 +61,13 @@
         
         <div class="flex-1 overflow-y-auto bg-slate-50/50">
             @include('events.partials.guests-tab')
+            @include('events.partials.analytics-tab')
             @include('events.partials.stream-tab')
             @include('events.partials.gallery-tab')
             @include('events.partials.blast-tab')
             @include('events.partials.promo-tab')
+            @include('events.partials.registration-tab')
+            @include('events.partials.team-tab')
         </div>
     </div>
 
@@ -88,6 +94,7 @@
 </div>
 
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="{{ env('NODE_SERVER_URL', 'http://localhost:3000') }}/socket.io/socket.io.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key={{ trim(config('services.google.maps_key', env('GOOGLE_MAPS_API_KEY'))) }}&callback=initHostMap" async defer></script>
 <script>
@@ -357,7 +364,7 @@
 
     // Tab Switching Logic
     function switchTab(tabId) {
-        const tabs = ['guests', 'stream', 'gallery', 'blast', 'promo'];
+        const tabs = ['guests', 'analytics', 'stream', 'gallery', 'blast', 'promo', 'registration', 'team'];
         tabs.forEach(t => {
             const panel = document.getElementById('panel-' + t);
             const btn = document.getElementById('tab-' + t);

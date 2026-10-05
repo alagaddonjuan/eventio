@@ -43,6 +43,7 @@
                 </div>
             </div>
 
+            @auth
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
@@ -78,6 +79,12 @@
                     </x-slot>
                 </x-dropdown>
             </div>
+            @else
+            <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
+                <a href="{{ route('login') }}" class="text-sm font-medium text-slate-300 hover:text-white">Log in</a>
+                <a href="{{ route('register') }}" class="text-sm font-medium bg-indigo-500 text-white px-4 py-2 rounded-xl hover:bg-indigo-600 transition">Register</a>
+            </div>
+            @endauth
 
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
@@ -116,6 +123,7 @@
             @endif
         </div>
 
+        @auth
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-white/10">
             <div class="px-4">
@@ -139,5 +147,13 @@
                 </form>
             </div>
         </div>
+        @else
+        <div class="pt-4 pb-1 border-t border-white/10">
+            <div class="mt-3 space-y-1">
+                <a href="{{ route('login') }}" class="block ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 hover:border-slate-600 transition-colors duration-150">Log in</a>
+                <a href="{{ route('register') }}" class="block ps-3 pe-4 py-2 border-l-4 border-transparent text-base font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 hover:border-slate-600 transition-colors duration-150">Register</a>
+            </div>
+        </div>
+        @endauth
     </div>
 </nav>

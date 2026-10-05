@@ -45,7 +45,7 @@ class EventController extends Controller
      */
     public function edit(Event $event)
     {
-        if ($event->user_id !== Auth::id()) {
+        if (!$event->canBeManagedBy(Auth::id())) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -57,7 +57,7 @@ class EventController extends Controller
      */
     public function update(Request $request, Event $event)
     {
-        if ($event->user_id !== Auth::id()) {
+        if (!$event->canBeManagedBy(Auth::id())) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -111,7 +111,11 @@ class EventController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $events = $user->events()->latest()->get();
+        
+        $ownedEvents = $user->events;
+        $cohostedEvents = $user->cohostedEvents()->with('event')->get()->pluck('event');
+        
+        $events = $ownedEvents->concat($cohostedEvents)->sortByDesc('created_at')->values();
         
         $eventIds = $events->pluck('id');
         
@@ -132,17 +136,37 @@ class EventController extends Controller
     public function commandCenter(Event $event)
     {
 
-        // Must authorize that the authenticated user owns this event
-        if ($event->user_id !== Auth::id()) {
+        // Must authorize that the authenticated user owns this event or is a co-host
+        if (!$event->canBeManagedBy(Auth::id())) {
             abort(403, 'Unauthorized action.');
         }
 
         // Load guests to prepopulate the command center sidebar
         $guests = $event->guests;
 
+        // Analytics Data
+        $guestsOverTime = $event->guests()
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+            
+        $ticketSales = $event->guests()
+            ->select('ticket_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->with('ticket')
+            ->groupBy('ticket_id')
+            ->get();
+            
+        $conversionRate = $event->page_views > 0 
+            ? round(($guests->count() / $event->page_views) * 100, 1) 
+            : 0;
+
         return view('events.command-center', [
             'event' => $event,
             'guests' => $guests,
+            'guestsOverTime' => $guestsOverTime,
+            'ticketSales' => $ticketSales,
+            'conversionRate' => $conversionRate,
             'nodeServerUrl' => env('NODE_SERVER_URL', 'http://localhost:3000')
         ]);
     }

@@ -5,24 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Guest extends Model
+class Waitlist extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'event_id',
-        'ticket_id',
         'name',
         'email',
-        'rsvp_status',
-        'unique_token',
-        'check_in_status',
-        'barcode_data'
+        'ticket_id',
+        'status',
     ];
 
-    /**
-     * Get the event that owns the guest.
-     */
     public function event()
     {
         return $this->belongsTo(Event::class);
@@ -31,15 +25,5 @@ class Guest extends Model
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);
-    }
-
-    public function supportTickets()
-    {
-        return $this->hasMany(SupportTicket::class);
-    }
-
-    public function answers()
-    {
-        return $this->hasMany(GuestAnswer::class);
     }
 }

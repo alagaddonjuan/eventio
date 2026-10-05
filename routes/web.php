@@ -49,6 +49,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
     Route::get('/events/{event}/command-center', [EventController::class, 'commandCenter'])->name('events.command-center');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+    Route::put('/events/{event}/registration', [App\Http\Controllers\EventRegistrationController::class, 'update'])->name('events.registration.update');
+    Route::post('/events/{event}/team', [App\Http\Controllers\EventTeamController::class, 'invite'])->name('events.team.invite');
+    Route::delete('/events/{event}/team/{cohost}', [App\Http\Controllers\EventTeamController::class, 'remove'])->name('events.team.remove');
 
     // Livestream Routes
     Route::post('/events/{event}/start-stream', [EventController::class, 'startStream'])->name('events.start-stream');
@@ -123,7 +126,11 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
 // Guest portal (no login required)
 Route::get('/rsvp/{event_token}', [GuestController::class, 'rsvp'])->name('guest.rsvp');
 Route::post('/rsvp/{event_token}', [GuestController::class, 'storeGuest'])->name('guest.store');
+Route::post('/waitlist/{event_token}', [\App\Http\Controllers\WaitlistController::class, 'store'])->name('guest.waitlist');
 Route::get('/portal/{token}', [GuestController::class, 'portal'])->name('guest.portal');
+Route::get('/portal/{token}/ics', [GuestController::class, 'downloadIcs'])->name('guest.ics');
+Route::get('/portal/{token}/wallet', [GuestController::class, 'downloadAppleWallet'])->name('guest.wallet');
+Route::get('/portal/{token}/google-wallet', [GuestController::class, 'downloadGoogleWallet'])->name('guest.google-wallet');
 
 // Guest Support Routes
 Route::get('/portal/{token}/support', [\App\Http\Controllers\SupportController::class, 'guestIndex'])->name('guest.support');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Guest;
 use App\Models\Event;
+use App\Models\GuestAnswer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -20,7 +21,32 @@ class GuestController extends Controller
             abort(404, 'This event is currently unavailable.');
         }
         
-        return view('guest.rsvp', compact('event'));
+        // Increment page views
+        $event->increment('page_views');
+        
+        $isSoldOut = false;
+        $hasCapacityConfigured = false;
+        $totalRemaining = 0;
+
+        if ($event->tickets->count() > 0) {
+            foreach ($event->tickets as $ticket) {
+                if ($ticket->capacity !== null) {
+                    $hasCapacityConfigured = true;
+                    $sold = $ticket->guests()->count();
+                    $remaining = max(0, $ticket->capacity - $sold);
+                    $totalRemaining += $remaining;
+                }
+            }
+        }
+
+        if ($hasCapacityConfigured && $totalRemaining === 0) {
+            $isSoldOut = true;
+        }
+        
+        // Pass custom questions if any
+        $customQuestions = $event->customQuestions;
+        
+        return view('guest.rsvp', compact('event', 'isSoldOut', 'customQuestions'));
     }
 
     /**
@@ -41,6 +67,8 @@ class GuestController extends Controller
             'emails' => 'required|array|min:1',
             'emails.*' => 'required|email|max:255',
             'rsvp_status' => 'required|in:attending,declined',
+            'answers' => 'nullable|array',
+            'answers.*' => 'nullable|array',
         ];
 
         if (config('services.recaptcha.site_key')) {
@@ -106,6 +134,19 @@ class GuestController extends Controller
                 'barcode_data' => $uniqueToken,
             ]);
             
+            // Save custom answers
+            if (isset($validated['answers'][$i]) && is_array($validated['answers'][$i])) {
+                foreach ($validated['answers'][$i] as $questionId => $answerText) {
+                    if (!empty($answerText)) {
+                        GuestAnswer::create([
+                            'guest_id' => $guest->id,
+                            'custom_question_id' => $questionId,
+                            'answer_text' => is_array($answerText) ? json_encode($answerText) : $answerText,
+                        ]);
+                    }
+                }
+            }
+            
             // Only send confirmation if attending
             if ($validated['rsvp_status'] === 'attending') {
                 \Illuminate\Support\Facades\Mail::to($guest->email)->send(new \App\Mail\GuestRsvpConfirmationEmail($guest));
@@ -165,10 +206,18 @@ class GuestController extends Controller
             $phase = 'D';
         }
 
+        $otherGuests = $event->guests()
+            ->where('id', '!=', $guest->id)
+            ->where('rsvp_status', 'attending')
+            ->inRandomOrder()
+            ->take(8)
+            ->get();
+
         return view('guest.portal', [
             'guest' => $guest,
             'event' => $event,
             'phase' => $phase,
+            'otherGuests' => $otherGuests,
             'nodeServerUrl' => config('services.node.url', 'http://localhost:3000')
         ]);
     }
@@ -201,5 +250,81 @@ class GuestController extends Controller
     {
         $guest = Guest::with(['event', 'ticket'])->where('unique_token', $token)->firstOrFail();
         return view('guest.verify', compact('guest'));
+    }
+
+    /**
+     * Generate and download an ICS Calendar file
+     */
+    public function downloadIcs($token)
+    {
+        $guest = Guest::with('event')->where('unique_token', $token)->firstOrFail();
+        $event = $guest->event;
+
+        $startDate = $event->event_date->format('Ymd\THis\Z');
+        $endDate = $event->event_date->addHours(3)->format('Ymd\THis\Z'); // Default to 3 hours duration
+
+        $ics = "BEGIN:VCALENDAR\r\n";
+        $ics .= "VERSION:2.0\r\n";
+        $ics .= "PRODID:-//Eventio//Eventio Calendar//EN\r\n";
+        $ics .= "BEGIN:VEVENT\r\n";
+        $ics .= "UID:" . uniqid() . "@eventio.com\r\n";
+        $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z') . "\r\n";
+        $ics .= "DTSTART:" . $startDate . "\r\n";
+        $ics .= "DTEND:" . $endDate . "\r\n";
+        $ics .= "SUMMARY:" . $event->title . "\r\n";
+        $ics .= "LOCATION:" . $event->venue_name . "\r\n";
+        $ics .= "DESCRIPTION:You are invited to " . $event->title . ". Access your digital ticket at " . route('guest.portal', $guest->unique_token) . "\r\n";
+        $ics .= "END:VEVENT\r\n";
+        $ics .= "END:VCALENDAR\r\n";
+
+        return response($ics, 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="event_' . Str::slug($event->title) . '.ics"',
+        ]);
+    }
+
+    /**
+     * Download Apple Wallet Pass
+     */
+    public function downloadAppleWallet($token)
+    {
+        $guest = Guest::with('event')->where('unique_token', $token)->firstOrFail();
+        
+        // This is a placeholder since generating a real .pkpass requires Apple Developer Certificates
+        // In a real scenario, you'd use a package like 'PKPass' to generate and sign the zip archive
+        
+        $json = json_encode([
+            "description" => $guest->event->title . " Ticket",
+            "formatVersion" => 1,
+            "organizationName" => "Eventio",
+            "passTypeIdentifier" => "pass.com.eventio.ticket",
+            "serialNumber" => $guest->unique_token,
+            "teamIdentifier" => "TEAMID",
+            "eventTicket" => [
+                "primaryFields" => [
+                    ["key" => "event", "label" => "EVENT", "value" => $guest->event->title]
+                ],
+                "secondaryFields" => [
+                    ["key" => "loc", "label" => "LOCATION", "value" => $guest->event->venue_name]
+                ]
+            ]
+        ]);
+
+        return response($json, 200, [
+            'Content-Type' => 'application/vnd.apple.pkpass',
+            'Content-Disposition' => 'attachment; filename="ticket.pkpass"',
+        ]);
+    }
+
+    /**
+     * Download Google Wallet Pass
+     */
+    public function downloadGoogleWallet($token)
+    {
+        $guest = Guest::with('event')->where('unique_token', $token)->firstOrFail();
+        
+        // Placeholder for Google Wallet JWT generation
+        // Requires Google Service Account credentials
+        return back()->with('success', 'Google Wallet integration requires active Google Service credentials.');
     }
 }

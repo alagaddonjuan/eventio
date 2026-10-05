@@ -26,6 +26,8 @@ class Event extends Model
         'simulcast_targets',
         'banner_image',
         'is_suspended',
+        'allow_waitlist',
+        'auto_approve_waitlist',
     ];
 
     protected $casts = [
@@ -33,6 +35,8 @@ class Event extends Model
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'simulcast_targets' => 'array',
+        'allow_waitlist' => 'boolean',
+        'auto_approve_waitlist' => 'boolean',
     ];
 
     /**
@@ -89,5 +93,29 @@ class Event extends Model
     public function promoterLinks()
     {
         return $this->hasMany(PromoterLink::class);
+    }
+
+    public function waitlists()
+    {
+        return $this->hasMany(Waitlist::class);
+    }
+
+    public function customQuestions()
+    {
+        return $this->hasMany(CustomQuestion::class);
+    }
+
+    public function cohosts()
+    {
+        return $this->hasMany(EventCohost::class);
+    }
+
+    public function canBeManagedBy($user_id)
+    {
+        if ($this->user_id === $user_id) {
+            return true;
+        }
+
+        return $this->cohosts()->where('user_id', $user_id)->exists();
     }
 }
