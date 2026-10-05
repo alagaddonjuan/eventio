@@ -243,6 +243,33 @@
                     <h4 class="text-lg font-bold text-slate-900 mb-2">Live Streaming</h4>
                     <p class="text-slate-600 text-sm">Stream your event live via Mux integration so virtual attendees never miss a moment.</p>
                 </div>
+                
+                <!-- Feature 7 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-pink-50 text-pink-600 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-slate-900 mb-2">Waitlists & Custom RSVPs</h4>
+                    <p class="text-slate-600 text-sm">Manage demand effortlessly with automated waitlists and custom registration questions.</p>
+                </div>
+                
+                <!-- Feature 8 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-slate-900 mb-2">Digital Wallets & Calendars</h4>
+                    <p class="text-slate-600 text-sm">Let guests save 3D holographic tickets to Apple/Google Wallet and sync to their calendar.</p>
+                </div>
+                
+                <!-- Feature 9 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-slate-900 mb-2">Integrated Marketplaces</h4>
+                    <p class="text-slate-600 text-sm">Discover and book venues, vendors, and talent directly from the ecosystem.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -270,6 +297,21 @@
                     <div class="p-6 flex-1 flex flex-col">
                         <h4 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition">{{ $event->title }}</h4>
                         <p class="text-slate-500 text-sm mb-4 line-clamp-2 flex-1">{{ $event->description ?? 'Join us for this amazing event at ' . $event->venue_name }}</p>
+                        
+                        @php
+                            $totalCapacity = $event->tickets ? $event->tickets->sum('capacity') : 0;
+                            $soldTickets = $event->guests ? $event->guests->count() : 0;
+                            $availableTickets = max(0, $totalCapacity - $soldTickets);
+                        @endphp
+                        
+                        <div class="flex items-center text-xs text-slate-500 font-medium mb-4 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <svg class="w-4 h-4 mr-1.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                            @if($totalCapacity > 0)
+                                {{ $availableTickets }} / {{ $totalCapacity }} tickets left
+                            @else
+                                Open Registration
+                            @endif
+                        </div>
                         
                         <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                             <div class="text-sm font-semibold text-slate-700">
